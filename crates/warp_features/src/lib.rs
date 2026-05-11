@@ -669,6 +669,9 @@ pub enum FeatureFlag {
     /// When enabled, the HOA onboarding flow is suppressed.
     OpenWarpLaunchModal,
 
+    /// Enables the orchestration launch modal announcing multi-agent orchestration features.
+    OrchestrationLaunchModal,
+
     /// Updated tab styling (background colors, border, close button positioning, margins).
     NewTabStyling,
 
@@ -950,6 +953,7 @@ pub const DOGFOOD_FLAGS: &[FeatureFlag] = &[
     FeatureFlag::CloudModeInputV2,
     FeatureFlag::HandoffLocalCloud,
     FeatureFlag::DragTabsToWindows,
+    FeatureFlag::OrchestrationLaunchModal,
     FeatureFlag::NamedAgents,
     FeatureFlag::GitCredentialRefresh,
     FeatureFlag::HandoffCloudCloud,

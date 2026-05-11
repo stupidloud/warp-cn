@@ -118,6 +118,7 @@ pub fn init(app: &mut AppContext) {
     tab_configs::session_config_modal::init(app);
     view::launch_modal::oz_launch::init(app);
     view::openwarp_launch_modal::init(app);
+    view::orchestration_launch_modal::init(app);
     view::cloud_agent_capacity_modal::init(app);
     view::codex_modal::init(app);
     view::free_tier_limit_hit_modal::init(app);
@@ -238,6 +239,18 @@ pub fn init(app: &mut AppContext) {
                         "binding-workspace-debug-reset-openwarp-launch-modal",
                     ),
                     WorkspaceAction::ResetOpenWarpLaunchModalState,
+                )
+                .with_context_predicate(id!("Workspace")),
+                EditableBinding::new(
+                    "workspace:open_orchestration_launch_modal",
+                    "[Debug] Open Orchestration Launch Modal",
+                    WorkspaceAction::OpenOrchestrationLaunchModal,
+                )
+                .with_context_predicate(id!("Workspace")),
+                EditableBinding::new(
+                    "workspace:reset_orchestration_launch_modal_state",
+                    "[Debug] Reset Orchestration Launch Modal State",
+                    WorkspaceAction::ResetOrchestrationLaunchModalState,
                 )
                 .with_context_predicate(id!("Workspace")),
                 EditableBinding::new(
