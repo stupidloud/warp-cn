@@ -193,7 +193,7 @@ pub(super) fn snapshot_dir() -> Option<PathBuf> {
 /// snapshot files back to repos without depending on this crate. Update both
 /// sites simultaneously when changing the algorithm.
 pub(super) fn snapshot_path(snapshot_dir: &Path, repo_path: &Path) -> PathBuf {
-    // Use a hash the repo_path to create a unique filename
+    // Use a hash of the repo_path to create a unique filename
     let mut hasher = DefaultHasher::new();
     repo_path.hash(&mut hasher);
     let snapshot_file_name = format!("snapshot_{}", hasher.finish());
