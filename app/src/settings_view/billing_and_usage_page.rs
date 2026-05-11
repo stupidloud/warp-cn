@@ -3306,7 +3306,7 @@ impl UsageWidget {
                     warp_i18n::t!("settings-billing-upgrade-build-plan"),
                     upgrade_url,
                 )];
-                if UserWorkspaces::as_ref(app).is_byo_api_key_enabled() {
+                if UserWorkspaces::as_ref(app).is_byo_api_key_enabled(app) {
                     fragments.push(FormattedTextFragment::plain_text(warp_i18n::t!(
                         "settings-billing-or-byok"
                     )));
