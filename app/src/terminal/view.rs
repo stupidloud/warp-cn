@@ -4568,7 +4568,10 @@ impl TerminalView {
                     | RemoteServerManagerEvent::CodebaseIndexStatusesSnapshot { .. }
                     | RemoteServerManagerEvent::CodebaseIndexStatusUpdated { .. }
                     | RemoteServerManagerEvent::BufferUpdated { .. }
-                    | RemoteServerManagerEvent::BufferConflictDetected { .. } => {}
+                    | RemoteServerManagerEvent::BufferConflictDetected { .. }
+                    | RemoteServerManagerEvent::DiffStateSnapshotReceived { .. }
+                    | RemoteServerManagerEvent::DiffStateMetadataUpdateReceived { .. }
+                    | RemoteServerManagerEvent::DiffStateFileDeltaReceived { .. } => {}
                 }
             });
         }
