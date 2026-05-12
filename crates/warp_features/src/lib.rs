@@ -951,7 +951,6 @@ pub const DOGFOOD_FLAGS: &[FeatureFlag] = &[
     FeatureFlag::DragTabsToWindows,
     FeatureFlag::OrchestrationLaunchModal,
     FeatureFlag::NamedAgents,
-    FeatureFlag::GitCredentialRefresh,
     FeatureFlag::HandoffCloudCloud,
     FeatureFlag::HarnessSessionHeader,
     FeatureFlag::SoloUserByok,
@@ -964,6 +963,7 @@ pub const PREVIEW_FLAGS: &[FeatureFlag] = &[
     FeatureFlag::BlocklistMarkdownTableRendering,
     FeatureFlag::MarkdownTables,
     FeatureFlag::GitOperationsInCodeReview,
+    FeatureFlag::GitCredentialRefresh,
 ];
 
 /// Features enabled for all release builds (i.e.: everything but WarpLocal).
