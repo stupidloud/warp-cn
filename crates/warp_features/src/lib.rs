@@ -315,9 +315,6 @@ pub enum FeatureFlag {
     /// Enables inline review comments on specific lines of code.
     ContextLineReviewComments,
 
-    /// Enables the natural language classification model.
-    NLDClassifierModelEnabled,
-
     /// Enables the fast-forward autoexecute button
     FastForwardAutoexecuteButton,
 
@@ -411,9 +408,6 @@ pub enum FeatureFlag {
 
     /// Allows opening file links using the $EDITOR environment variable.
     AllowOpeningFileLinksUsingEditorEnv,
-
-    /// Enables improvements to our natural language detection functionality.
-    NldImprovements,
 
     /// Enables the ability to undo closed panes.
     UndoClosedPanes,
@@ -915,7 +909,6 @@ pub const DOGFOOD_FLAGS: &[FeatureFlag] = &[
     FeatureFlag::RetryTruncatedCodeResponses,
     FeatureFlag::ContextLineReviewComments,
     FeatureFlag::RunGeneratorsWithCmdExe,
-    FeatureFlag::NLDClassifierModelEnabled,
     FeatureFlag::Projects,
     FeatureFlag::ProviderCommand,
     FeatureFlag::ArtifactCommand,
