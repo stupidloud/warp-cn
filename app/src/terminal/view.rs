@@ -13024,7 +13024,7 @@ impl TerminalView {
         } else {
             Some(
                 BlocklistAIHistoryModel::handle(ctx).update(ctx, |history_model, ctx| {
-                    history_model.start_new_conversation(self.view_id, false, false, ctx)
+                    history_model.start_new_conversation(self.view_id, false, false, false, ctx)
                 }),
             )
         }) else {
@@ -21697,7 +21697,8 @@ impl TerminalView {
         let terminal_view_id = ctx.view_id();
         let mut new_conversation_id = None;
         BlocklistAIHistoryModel::handle(ctx).update(ctx, |history, model_ctx| {
-            let id = history.start_new_conversation(terminal_view_id, false, false, model_ctx);
+            let id =
+                history.start_new_conversation(terminal_view_id, false, false, false, model_ctx);
             // Mark it active for good measure (not strictly required for rendering).
             history.set_active_conversation_id(id, terminal_view_id, model_ctx);
             new_conversation_id = Some(id);
