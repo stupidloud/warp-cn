@@ -55,6 +55,7 @@ terminal-share-block-menu = Share block...
 terminal-fork-last-query = Fork from last query
 terminal-fork-query = Fork from "{ $query }"
 terminal-fork-from-here = Fork from here (dev only)
+terminal-fork-conversation = Fork
 terminal-rewind-before-here = Rewind to before here
 terminal-split-pane-right = Split pane right
 terminal-split-pane-left = Split pane left

@@ -208,6 +208,7 @@ ai-ui-conversation-list-past-section = PAST
 ai-ui-conversation-list-delete = Delete
 ai-ui-conversation-list-cannot-delete = This conversation cannot be deleted
 ai-ui-conversation-list-share = Share conversation
+ai-ui-conversation-list-copy-share-link = Copy share link
 ai-ui-conversation-list-fork-new-pane = Fork in new pane
 ai-ui-conversation-list-fork-new-tab = Fork in new tab
 ai-ui-codex-new = New

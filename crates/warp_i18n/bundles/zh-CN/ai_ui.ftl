@@ -208,6 +208,7 @@ ai-ui-conversation-list-past-section = 历史
 ai-ui-conversation-list-delete = 删除
 ai-ui-conversation-list-cannot-delete = 此会话无法删除
 ai-ui-conversation-list-share = 共享会话
+ai-ui-conversation-list-copy-share-link = 复制共享链接
 ai-ui-conversation-list-fork-new-pane = 在新窗格中 fork
 ai-ui-conversation-list-fork-new-tab = 在新标签页中 fork
 ai-ui-codex-new = 新建
