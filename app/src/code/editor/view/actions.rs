@@ -516,8 +516,24 @@ pub fn init(app: &mut AppContext) {
             BindingDescription::fluent("binding-code-editor-delete"),
             CodeEditorViewAction::Delete,
         )
-        .with_context_predicate(text_entry.clone())
+        .with_context_predicate(
+            text_entry.clone() & !id!("VimNormalMode") & !id!("VimVisualMode"),
+        )
         .with_key_binding("ctrl-d"),
+        EditableBinding::new(
+            "editor_view:vim_scroll_half_page_down",
+            "Scroll down half a page (vim)",
+            CodeEditorViewAction::ScrollHalfPageDown,
+        )
+        .with_context_predicate(text_entry.clone() & (id!("VimNormalMode") | id!("VimVisualMode")))
+        .with_key_binding("ctrl-d"),
+        EditableBinding::new(
+            "editor_view:vim_scroll_half_page_up",
+            "Scroll up half a page (vim)",
+            CodeEditorViewAction::ScrollHalfPageUp,
+        )
+        .with_context_predicate(text_entry.clone() & (id!("VimNormalMode") | id!("VimVisualMode")))
+        .with_key_binding("ctrl-u"),
         EditableBinding::new(
             "editor_view:cut_word_left",
             BindingDescription::fluent("binding-code-editor-cut-word-left"),
@@ -624,6 +640,8 @@ pub enum CodeEditorViewAction {
     ToggleComment,
     ScrollVertical(Pixels),
     ScrollHorizontal(Pixels),
+    ScrollHalfPageDown,
+    ScrollHalfPageUp,
     SelectUp,
     SelectDown,
     SelectLeft,
@@ -761,6 +779,8 @@ impl CodeEditorViewAction {
             Self::WindowsCtrlC => true,
             Self::ScrollVertical(_)
             | Self::ScrollHorizontal(_)
+            | Self::ScrollHalfPageDown
+            | Self::ScrollHalfPageUp
             | Self::SelectUp
             | Self::SelectDown
             | Self::SelectLeft
@@ -875,6 +895,12 @@ impl TypedActionView for CodeEditorView {
                     render_state.scroll_horizontal(*delta, ctx);
                 })
             }),
+            ScrollHalfPageDown => {
+                self.vim_keystroke(&Keystroke::parse("ctrl-d").expect("ctrl-d parses"), ctx)
+            }
+            ScrollHalfPageUp => {
+                self.vim_keystroke(&Keystroke::parse("ctrl-u").expect("ctrl-u parses"), ctx)
+            }
             SelectUp => self.model.update(ctx, |model, ctx| {
                 model.select_up(ctx);
             }),
