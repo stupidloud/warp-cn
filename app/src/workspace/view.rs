@@ -86,7 +86,7 @@ use crate::app_state::{
     PaneNodeSnapshot, PaneUuid, RightPanelSnapshot, SettingsPaneSnapshot, TabSnapshot,
     TerminalPaneSnapshot, WindowSnapshot, WorkflowPaneSnapshot,
 };
-use crate::code::buffer_location::FileLocation;
+use crate::code::buffer_location::LocalOrRemotePath;
 use crate::code_review::diff_state::DiffStateModel;
 #[cfg(feature = "local_fs")]
 use crate::code_review::CodeReviewTelemetryEvent;
@@ -5964,7 +5964,7 @@ impl Workspace {
                     location: location.clone(),
                 };
                 match location {
-                    FileLocation::Local(path) => {
+                    LocalOrRemotePath::Local(path) => {
                         self.open_file_with_target(
                             path.clone(),
                             target.clone(),
@@ -5973,7 +5973,7 @@ impl Workspace {
                             ctx,
                         );
                     }
-                    FileLocation::Remote(_) => {
+                    LocalOrRemotePath::Remote(_) => {
                         #[cfg(feature = "local_fs")]
                         self.open_code(
                             code_source,
@@ -7489,7 +7489,7 @@ impl Workspace {
                     }
                     for extra in additional_paths {
                         code_view.open_or_focus_existing(
-                            Some(FileLocation::Local(extra.clone())),
+                            Some(LocalOrRemotePath::Local(extra.clone())),
                             None,
                             ctx,
                         );
@@ -7545,7 +7545,7 @@ impl Workspace {
 
                                 for extra in additional_paths {
                                     code_view.open_or_focus_existing(
-                                        Some(FileLocation::Local(extra.clone())),
+                                        Some(LocalOrRemotePath::Local(extra.clone())),
                                         None,
                                         ctx,
                                     );
@@ -7604,7 +7604,7 @@ impl Workspace {
                 code_view.update(ctx, |code_view, ctx| {
                     for path in additional_paths {
                         code_view.open_or_focus_existing(
-                            Some(FileLocation::Local(path.clone())),
+                            Some(LocalOrRemotePath::Local(path.clone())),
                             None,
                             ctx,
                         );
@@ -8183,7 +8183,7 @@ impl Workspace {
                     let diff_state_model = repo_path.as_ref().and_then(|rp: &PathBuf| {
                         self.working_directories_model.update(ctx, |model, ctx| {
                             model.get_or_create_diff_state_model(
-                                FileLocation::Local(rp.clone()),
+                                LocalOrRemotePath::Local(rp.clone()),
                                 ctx,
                             )
                         })
@@ -8230,7 +8230,7 @@ impl Workspace {
         let repo_path = panel_context.repo_path.clone();
         let diff_state_model = repo_path.as_ref().and_then(|rp| {
             self.working_directories_model.update(ctx, |model, ctx| {
-                model.get_or_create_diff_state_model(FileLocation::Local(rp.clone()), ctx)
+                model.get_or_create_diff_state_model(LocalOrRemotePath::Local(rp.clone()), ctx)
             })
         });
         let Some(diff_state_model) = diff_state_model else {
@@ -8347,7 +8347,10 @@ impl Workspace {
             |(repo_path, terminal_view): (Option<PathBuf>, WeakViewHandle<TerminalView>)| {
                 let diff_state_model = repo_path.as_ref().and_then(|rp: &PathBuf| {
                     self.working_directories_model.update(ctx, |model, ctx| {
-                        model.get_or_create_diff_state_model(FileLocation::Local(rp.clone()), ctx)
+                        model.get_or_create_diff_state_model(
+                            LocalOrRemotePath::Local(rp.clone()),
+                            ctx,
+                        )
                     })
                 })?;
                 Some(CodeReviewPaneContext {
@@ -14356,7 +14359,7 @@ impl Workspace {
                                         if let Some(path) = moved_file_path {
                                             target_code_view.update(ctx, |view, ctx| {
                                                 view.open_or_focus_existing(
-                                                    Some(FileLocation::Local(path)),
+                                                    Some(LocalOrRemotePath::Local(path)),
                                                     None,
                                                     ctx,
                                                 );
@@ -21289,7 +21292,7 @@ impl TypedActionView for Workspace {
                         let diff_state_model = repo_path.as_ref().and_then(|rp| {
                             self.working_directories_model.update(ctx, |model, ctx| {
                                 model.get_or_create_diff_state_model(
-                                    FileLocation::Local(rp.clone()),
+                                    LocalOrRemotePath::Local(rp.clone()),
                                     ctx,
                                 )
                             })
