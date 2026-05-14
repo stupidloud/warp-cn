@@ -925,7 +925,6 @@ pub const DOGFOOD_FLAGS: &[FeatureFlag] = &[
     FeatureFlag::AgentViewBlockContext,
     FeatureFlag::OzLaunchModal,
     FeatureFlag::OzChangelogUpdates,
-    FeatureFlag::PendingUserQueryIndicator,
     FeatureFlag::QueueSlashCommand,
     // These are enabled via 100% experiment on prod warp-server,
     // but we need to enable here for dogfood builds.
@@ -937,7 +936,6 @@ pub const DOGFOOD_FLAGS: &[FeatureFlag] = &[
     FeatureFlag::EditableMarkdownMermaid,
     FeatureFlag::CodeReviewScrollPreservation,
     FeatureFlag::AgentHarness,
-    FeatureFlag::OzHandoff,
     FeatureFlag::ConversationApi,
     FeatureFlag::RememberFastForwardState,
     FeatureFlag::HOANotifications,
@@ -947,7 +945,6 @@ pub const DOGFOOD_FLAGS: &[FeatureFlag] = &[
     #[cfg(not(windows))]
     FeatureFlag::SshRemoteServer,
     FeatureFlag::CloudModeInputV2,
-    FeatureFlag::HandoffLocalCloud,
     FeatureFlag::DragTabsToWindows,
     FeatureFlag::OrchestrationLaunchModal,
     FeatureFlag::NamedAgents,
