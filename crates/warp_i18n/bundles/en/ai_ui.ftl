@@ -127,6 +127,7 @@ ai-ui-agent-tip-warpify-ssh = Warpify a remote SSH session to enable Oz inside t
 ai-ui-agent-tip-switch-profiles = Switch agent profiles to quickly change models and agent permissions.
 ai-ui-agent-tip-init-rules = `/init` to generate a `WARP.md` file and define project rules for the agent.
 ai-ui-agent-tip-auto-approve-session = <keybinding> to auto-approve the agent's commands and diffs for the rest of the session.
+ai-ui-agent-tip-handoff-cloud = Type `&` or use the handoff chip to move a local conversation to the cloud.
 ai-ui-agent-tip-desktop-notifications = Enable desktop notifications to get an alert when an agent needs your attention.
 ai-ui-agent-tip-cancel-task = <keybinding> to cancel the current agent task.
 ai-ui-agent-tip-voice-input = Hold <keybinding> to speak your prompt directly to the agent.

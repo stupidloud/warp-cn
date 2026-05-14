@@ -82,6 +82,8 @@ pub enum AgentTipKind {
     Context,
     /// Tips about code editors, file trees, and code review panes
     Code,
+    /// Tips about local-to-cloud handoff
+    Handoff,
 }
 
 static DEFAULT_TIPS: LazyLock<Vec<AgentTip>> = LazyLock::new(|| {
@@ -322,6 +324,13 @@ static DEFAULT_TIPS: LazyLock<Vec<AgentTip>> = LazyLock::new(|| {
             kind: AgentTipKind::General,
         },
         AgentTip {
+            description_key: "ai-ui-agent-tip-handoff-cloud",
+            link: None,
+            binding_name: None,
+            action: None,
+            kind: AgentTipKind::Handoff,
+        },
+        AgentTip {
             description_key: "ai-ui-agent-tip-desktop-notifications",
             link: Some("https://docs.warp.dev/agent-platform/cloud-agents/managing-cloud-agents#in-app-agent-notifications".to_string()),
             binding_name: None,
@@ -414,6 +423,10 @@ impl AITip for AgentTip {
             return CodebaseIndexManager::as_ref(app)
                 .get_codebase_index_status_for_path(root, app)
                 .is_none();
+        }
+        // Handoff tips only apply when the feature is available and enabled.
+        if matches!(self.kind, AgentTipKind::Handoff) {
+            return AISettings::as_ref(app).is_cloud_handoff_enabled(app);
         }
         true
     }

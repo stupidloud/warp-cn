@@ -127,6 +127,7 @@ ai-ui-agent-tip-warpify-ssh = 对远程 SSH 会话执行 Warpify，即可在该�
 ai-ui-agent-tip-switch-profiles = 切换智能体配置文件，可快速更换模型和智能体权限。
 ai-ui-agent-tip-init-rules = 使用 `/init` 生成 `WARP.md` 文件，并定义智能体项目规则。
 ai-ui-agent-tip-auto-approve-session = 使用 <keybinding> 在本次会话剩余时间内自动批准智能体命令和 diff。
+ai-ui-agent-tip-handoff-cloud = 输入 `&` 或使用交接按钮，将本地会话移到云端。
 ai-ui-agent-tip-desktop-notifications = 启用桌面通知，当智能体需要你关注时收到提醒。
 ai-ui-agent-tip-cancel-task = 使用 <keybinding> 取消当前智能体任务。
 ai-ui-agent-tip-voice-input = 按住 <keybinding>，直接对智能体说出你的提示词。
