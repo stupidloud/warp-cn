@@ -173,9 +173,6 @@ pub enum QueryFilter {
     /// Filter results for all conversations.
     Conversations,
 
-    /// Filter results for only historical conversations. Used in the "View All" palette on new tabs
-    HistoricalConversations,
-
     /// Filter results for launch configurations.
     LaunchConfigurations,
 
@@ -244,9 +241,6 @@ impl QueryFilter {
             QueryFilter::Sessions => "search-filter-placeholder-sessions",
             QueryFilter::Tabs => "search-filter-placeholder-tabs",
             QueryFilter::Conversations => "search-filter-placeholder-conversations",
-            QueryFilter::HistoricalConversations => {
-                "search-filter-placeholder-historical-conversations"
-            }
             QueryFilter::LaunchConfigurations => "search-filter-placeholder-launch-configurations",
             QueryFilter::Drive => "search-filter-placeholder-drive",
             QueryFilter::EnvironmentVariables => "search-filter-placeholder-environment-variables",
@@ -296,7 +290,6 @@ impl QueryFilter {
             QueryFilter::Repos => &REPOS_FILTER_ATOM,
             QueryFilter::DiffSets => &DIFFSETS_FILTER_ATOM,
             QueryFilter::StaticSlashCommands => &STATIC_SLASH_COMMANDS_FILTER_ATOM,
-            QueryFilter::HistoricalConversations => &NO_FILTER_ATOM,
             QueryFilter::Skills => &NO_FILTER_ATOM,
             QueryFilter::BaseModels => &NO_FILTER_ATOM,
             QueryFilter::FullTerminalUseModels => &NO_FILTER_ATOM,
@@ -329,7 +322,6 @@ impl QueryFilter {
             QueryFilter::Repos => "repos",
             QueryFilter::DiffSets => "diff sets",
             QueryFilter::StaticSlashCommands => "slash commands",
-            QueryFilter::HistoricalConversations => "historical conversations",
             QueryFilter::Skills => "skills",
             QueryFilter::BaseModels => "base models",
             QueryFilter::FullTerminalUseModels => "full terminal use models",
@@ -354,9 +346,7 @@ impl QueryFilter {
             QueryFilter::Actions => None,
             QueryFilter::Sessions => Some("bundled/svg/terminal-input.svg"),
             QueryFilter::Tabs => Some("bundled/svg/terminal-input.svg"),
-            QueryFilter::Conversations | QueryFilter::HistoricalConversations => {
-                Some("bundled/svg/conversation.svg")
-            }
+            QueryFilter::Conversations => Some("bundled/svg/conversation.svg"),
             QueryFilter::LaunchConfigurations => Some("bundled/svg/navigation.svg"),
             QueryFilter::Drive => Some("bundled/svg/warp-drive.svg"),
             QueryFilter::EnvironmentVariables => Some("bundled/svg/env-var-collection.svg"),
