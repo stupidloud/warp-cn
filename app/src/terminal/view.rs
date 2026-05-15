@@ -6965,21 +6965,26 @@ impl TerminalView {
         })
     }
 
+    /// Returns whether a specific session is local, treating shared-session
+    /// viewers and conversation transcript viewers as non-local even when
+    /// their session hasn't been joined yet.
+    pub fn session_is_local<C: ModelAsRef>(&self, session_id: SessionId, ctx: &C) -> bool {
+        let forced_non_local = {
+            let model = self.model.lock();
+            model.is_shared_session_viewer() || model.is_conversation_transcript_viewer()
+        };
+        !forced_non_local
+            && self
+                .sessions
+                .as_ref(ctx)
+                .get(session_id)
+                .is_some_and(|session| session.is_local())
+    }
+
     /// Returns whether or not the active session is a local session.  Returns
     /// None if there is no active session.
     pub fn active_session_is_local<C: ModelAsRef>(&self, ctx: &C) -> Option<bool> {
-        // Ensure shared session viewers and conversation transcript viewers are not
-        // considered local, even if the session hasn't been joined yet.
-        let model = self.model.lock();
-        if model.is_shared_session_viewer() || model.is_conversation_transcript_viewer() {
-            return Some(false);
-        }
-        drop(model);
-
-        self.active_block_session_id().and_then(|session_id| {
-            let current_session = self.sessions.as_ref(ctx).get(session_id)?;
-            Some(current_session.is_local())
-        })
+        Some(self.session_is_local(self.active_block_session_id()?, ctx))
     }
 
     /// Returns the active session's launch shell, if it is specified.
@@ -11482,38 +11487,68 @@ impl TerminalView {
                     {
                         // Check if we need to index the directory
                         if block_metadata_received_event.is_done_bootstrapping {
-                            #[cfg(feature = "local_fs")]
-                            {
-                                // Convert the shell-native CWD (e.g. "/c/Users/..." for
-                                // Git Bash/MSYS2) to a Windows-native path before passing
-                                // it to repo detection, which requires an OS-native path.
-                                let native_directory = block_metadata_received_event
-                                    .block_metadata
-                                    .session_id()
-                                    .and_then(|session_id| {
-                                        self.sessions.as_ref(ctx).get(session_id)
-                                    })
-                                    .and_then(|session| {
-                                        session.launch_data().and_then(|data| {
-                                            data.maybe_convert_absolute_path(active_directory)
-                                        })
-                                    })
-                                    .map(|path| path.to_string_lossy().into_owned());
-                                let directory_for_detection =
-                                    native_directory.as_deref().unwrap_or(active_directory);
+                            // Derive locality directly from the incoming block's
+                            // session_id. We cannot use `active_session_is_local(ctx)`
+                            // here because `active_block_metadata` was just consumed
+                            // via `take()` above, so it would always return `None`
+                            // and misclassify every local session as Remote.
+                            //
+                            // `session_is_local` keeps the shared-session viewer /
+                            // conversation-transcript guard intact.
+                            let Some(session_id) = block_metadata.session_id() else {
+                                // Skip detection entirely when session type can't be determined.
+                                self.active_block_metadata = Some(block_metadata.clone());
+                                self.input.update(ctx, |view, ctx| {
+                                    view.set_active_block_metadata(
+                                        block_metadata.clone(),
+                                        block_metadata_received_event.is_after_in_band_command,
+                                        ctx,
+                                    );
+                                    ctx.notify();
+                                });
+                                return;
+                            };
+                            if !self.session_is_local(session_id, ctx) {
+                                self.active_block_metadata = Some(block_metadata.clone());
+                                self.input.update(ctx, |view, ctx| {
+                                    view.set_active_block_metadata(
+                                        block_metadata.clone(),
+                                        block_metadata_received_event.is_after_in_band_command,
+                                        ctx,
+                                    );
+                                    ctx.notify();
+                                });
+                                return;
+                            }
 
-                                let fut = DetectedRepositories::handle(ctx).update(
-                                    ctx,
-                                    |updater, ctx| {
-                                        updater.detect_possible_git_repo(
-                                            directory_for_detection,
-                                            RepoDetectionSource::TerminalNavigation,
-                                            ctx,
-                                        )
-                                    },
-                                );
+                            // Convert the shell-native CWD (e.g. "/c/Users/..." for
+                            // Git Bash/MSYS2) to a Windows-native path before passing
+                            // it to repo detection, which requires an OS-native path.
+                            let native_directory = block_metadata_received_event
+                                .block_metadata
+                                .session_id()
+                                .and_then(|session_id| self.sessions.as_ref(ctx).get(session_id))
+                                .and_then(|session| {
+                                    session.launch_data().and_then(|data| {
+                                        data.maybe_convert_absolute_path(active_directory)
+                                    })
+                                })
+                                .map(|path| path.to_string_lossy().into_owned());
+                            let directory_for_detection =
+                                native_directory.as_deref().unwrap_or(active_directory);
 
-                                ctx.spawn(fut, move |me, repo_path_opt, ctx| {
+                            let fut = DetectedRepositories::handle(ctx).update(
+                                ctx,
+                                |updater, ctx| {
+                                    updater.detect_possible_git_repo(
+                                        directory_for_detection,
+                                        RepoDetectionSource::TerminalNavigation,
+                                        ctx,
+                                    )
+                                },
+                            );
+
+                            ctx.spawn(fut, move |me, repo_path_opt, ctx| {
                                     let old_repo_path = me.current_repo_path.clone();
                                     // Update the current repo path
                                     me.current_repo_path = repo_path_opt.clone();
@@ -11581,8 +11616,7 @@ impl TerminalView {
                                         me.clear_git_repo_status(ctx);
                                         ctx.notify();
                                     }
-                                });
-                            }
+                            });
                         }
                     }
                 }
