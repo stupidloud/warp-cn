@@ -720,6 +720,13 @@ pub enum FeatureFlag {
     /// behavior between siblings.
     OrchestrationPillBar,
 
+    /// Enables the orchestration pill bar in shared session viewers (web and
+    /// native). When enabled, viewing a shared session that used orchestration
+    /// shows a pill bar above the agent view header with the orchestrator and
+    /// each child agent. Clicking a child pill joins the child's shared session
+    /// and switches the view to its transcript.
+    OrchestrationViewerPillBar,
+
     /// Shows a pending user query indicator during summarization when a follow-up
     /// prompt is queued via `/fork-and-compact` or `/compact-and`.
     PendingUserQueryIndicator,
@@ -939,6 +946,7 @@ pub const DOGFOOD_FLAGS: &[FeatureFlag] = &[
     FeatureFlag::ConversationApi,
     FeatureFlag::RememberFastForwardState,
     FeatureFlag::HOANotifications,
+    FeatureFlag::OrchestrationViewerPillBar,
     FeatureFlag::GeminiNotifications,
     FeatureFlag::LocalDockerSandbox,
     FeatureFlag::CloudModeSetupV2,
@@ -958,6 +966,7 @@ pub const PREVIEW_FLAGS: &[FeatureFlag] = &[
     FeatureFlag::Orchestration,
     FeatureFlag::OrchestrationV2,
     FeatureFlag::OrchestrationPillBar,
+    FeatureFlag::OrchestrationViewerPillBar,
     FeatureFlag::RunAgentsTool,
     FeatureFlag::BlocklistMarkdownTableRendering,
     FeatureFlag::MarkdownTables,
