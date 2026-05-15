@@ -31,6 +31,7 @@ pub use self::handoff_compose::{HandoffComposeState, HandoffComposeStateEvent};
 use crate::ai::active_agent_views_model::{ActiveAgentViewsModel, ConversationOrTaskId};
 use crate::ai::agent::conversation::AIConversationId;
 use crate::ai::agent::{AIAgentExchangeId, CancellationReason};
+use crate::ai::ambient_agents::telemetry::HandoffEntryPoint;
 use crate::ai::blocklist::agent_view::shortcuts::AgentShortcutViewModel;
 use crate::ai::blocklist::agent_view::{AgentViewEntryOrigin, EphemeralMessageModel};
 use crate::ai::blocklist::block::cli_controller::CLISubagentController;
@@ -2568,7 +2569,7 @@ impl Input {
                     ctx.emit(Event::OpenPluginInstructionsPane(*agent, *kind));
                 }
                 AgentInputFooterEvent::OpenHandoffPane => {
-                    me.activate_cloud_handoff_compose(ctx);
+                    me.activate_cloud_handoff_compose(HandoffEntryPoint::FooterChip, ctx);
                 }
             }
         });
@@ -3733,7 +3734,7 @@ impl Input {
         environment_id: Option<SyncId>,
         ctx: &mut ViewContext<Self>,
     ) {
-        self.activate_cloud_handoff_compose(ctx);
+        self.activate_cloud_handoff_compose(HandoffEntryPoint::Ampersand, ctx);
         self.editor.update(ctx, |editor, ctx| {
             editor.set_buffer_text(&launch.prompt, ctx);
         });
@@ -3766,7 +3767,11 @@ impl Input {
 
     /// Switches the input into cloud handoff compose mode, locking it to AI input
     /// and activating the handoff compose state.
-    fn activate_cloud_handoff_compose(&mut self, ctx: &mut ViewContext<Self>) {
+    fn activate_cloud_handoff_compose(
+        &mut self,
+        entry_point: HandoffEntryPoint,
+        ctx: &mut ViewContext<Self>,
+    ) {
         if self.prefix_mode(ctx) == InputPrefixMode::CloudHandoff {
             return;
         }
@@ -3784,7 +3789,7 @@ impl Input {
         });
 
         self.handoff_compose_state
-            .update(ctx, |state, ctx| state.activate(ctx));
+            .update(ctx, |state, ctx| state.activate(entry_point, ctx));
         self.is_editor_empty_on_last_edit = is_input_buffer_empty;
 
         #[cfg(all(feature = "local_fs", not(target_family = "wasm")))]
@@ -3830,6 +3835,11 @@ impl Input {
                 }
             },
         );
+    }
+
+    #[cfg_attr(target_family = "wasm", allow(dead_code))]
+    pub(crate) fn handoff_entry_point(&self, ctx: &AppContext) -> HandoffEntryPoint {
+        self.handoff_compose_state.as_ref(ctx).entry_point()
     }
 
     #[cfg(all(feature = "local_fs", not(target_family = "wasm")))]
@@ -3929,8 +3939,9 @@ impl Input {
             );
         });
 
-        self.handoff_compose_state
-            .update(ctx, |state, ctx| state.activate(ctx));
+        self.handoff_compose_state.update(ctx, |state, ctx| {
+            state.activate(HandoffEntryPoint::Ampersand, ctx)
+        });
         self.is_editor_empty_on_last_edit = is_input_buffer_empty;
 
         #[cfg(all(feature = "local_fs", not(target_family = "wasm")))]
@@ -4037,6 +4048,7 @@ impl Input {
             .as_ref(ctx)
             .selected_environment_id()
             .cloned();
+        let entry_point = self.handoff_compose_state.as_ref(ctx).entry_point();
         let launch = PendingCloudLaunch {
             prompt,
             attachments,
@@ -4047,6 +4059,7 @@ impl Input {
         ctx.dispatch_typed_action_deferred(WorkspaceAction::OpenLocalToCloudHandoffPane {
             launch: Some(launch),
             environment_id,
+            entry_point,
         });
         true
     }
@@ -14960,7 +14973,7 @@ impl TypedActionView for Input {
                 self.clear_attached_context(ctx);
             }
             InputAction::ActivateCloudHandoff => {
-                self.activate_cloud_handoff_compose(ctx);
+                self.activate_cloud_handoff_compose(HandoffEntryPoint::Ampersand, ctx);
             }
         }
     }
