@@ -3893,7 +3893,8 @@ impl Input {
             )
         };
         *edit_origin == EditOrigin::UserTyped
-            && AISettings::as_ref(ctx).is_ampersand_handoff_enabled(ctx)
+            && AISettings::as_ref(ctx)
+                .is_ampersand_handoff_enabled_for_terminal_view(self.terminal_view_id, ctx)
             && !is_powershell_with_nld_enabled
             && FeatureFlag::AgentView.is_enabled()
             && self.agent_view_controller.as_ref(ctx).is_fullscreen()
