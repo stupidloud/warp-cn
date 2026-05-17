@@ -190,6 +190,15 @@ onboarding-callout-nl-overrides-text = You can always override any auto-detectio
 onboarding-callout-nl-support-title = Natural language support
 onboarding-callout-nl-support-text = Natural language input is off by default. If enabled, you can type requests in plain English and Warp will autodetect queries for the agent. You can always override them using <keybinding>.
 onboarding-callout-enable-nl-detection = Enable Natural Language Detection
+onboarding-callout-terminal-mode-welcome-title = Welcome to terminal mode
+onboarding-callout-terminal-mode-title = You’re in terminal mode
+onboarding-callout-terminal-mode-text = Run commands here, just like a regular terminal. If you type a question or task using natural language, Warp can suggest opening it in agent mode. You can always override using <keybinding>.
+onboarding-callout-agent-mode-title = You're in agent mode
+onboarding-callout-agent-mode-with-project-text =
+    Agent mode gives your questions and tasks their own conversation, so you can ask follow-ups without leaving your terminal workflow.
+
+    Submit the query below to have the agent initialize this project, or ⊗ to clear the input and start your own!
+onboarding-callout-agent-mode-text = Agent mode gives your questions and tasks their own conversation, so you can ask follow-ups without leaving your terminal workflow. Press <keybinding> to return to terminal mode at any point.
 onboarding-callout-agent-experience-title = Introducing Warp's new agent experience
 onboarding-callout-agent-experience-text = Agent conversations are now their own scoped view outside of your terminal. Simply hit ESC to return to the terminal at any point.
 onboarding-callout-updated-agent-input-title = Updated agent input

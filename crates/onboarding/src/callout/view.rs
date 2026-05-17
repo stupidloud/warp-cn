@@ -16,6 +16,8 @@ pub struct OnboardingKeybindings {
     pub submit_to_local_agent: String,
     /// Display string for submitting to cloud agent (e.g., "⌘⌥⏎")
     pub submit_to_cloud_agent: String,
+    /// Display string for returning to terminal mode (e.g., "Esc")
+    pub return_to_terminal_mode: String,
 }
 
 use crate::{
@@ -117,50 +119,23 @@ fn get_agent_modality_callout_options(
     keybindings: &OnboardingKeybindings,
 ) -> Option<CalloutOptions> {
     let total_steps = match intention {
-        OnboardingIntention::Terminal => 2,
-        OnboardingIntention::AgentDrivenDevelopment => 4,
+        OnboardingIntention::Terminal => 1,
+        OnboardingIntention::AgentDrivenDevelopment => 2,
     };
 
     match state {
-        AgentModalityCalloutState::MeetTerminalInput => {
-            let title = if has_project || intention == OnboardingIntention::Terminal {
-                warp_i18n::t!("onboarding-callout-meet-terminal-input-title")
-            } else {
-                warp_i18n::t!("onboarding-callout-meet-updated-terminal-input-title")
-            };
-            Some(CalloutOptions {
-                title,
-                text: replace_placeholder(
-                    replace_placeholder(
-                        warp_i18n::t!("onboarding-callout-meet-terminal-input-text"),
-                        "<local>",
-                        keybindings.submit_to_local_agent.as_str(),
-                    ),
-                    "<cloud>",
-                    keybindings.submit_to_cloud_agent.as_str(),
-                ),
-                step: StepStatus::new(0, total_steps),
-                left_button: None,
-                right_button: ButtonOptions {
-                    text: warp_i18n::t!("onboarding-nav-next"),
-                    action: OnboardingCalloutViewAction::NextClicked,
-                    keystroke: Some(Keystroke::parse("enter").unwrap_or_default()),
-                },
-                checkbox: None,
-            })
-        }
-        AgentModalityCalloutState::NaturalLanguageSupport => {
+        AgentModalityCalloutState::TerminalMode => {
             let is_final_step = intention == OnboardingIntention::Terminal;
             // Show different callout content based on initial NL detection state
             if initial_natural_language_detection_enabled {
                 // NL detection was already enabled - show simpler "overrides" callout without checkbox
                 Some(CalloutOptions {
-                    title: warp_i18n::t!("onboarding-callout-nl-overrides-title"),
+                    title: warp_i18n::t!("onboarding-callout-terminal-mode-welcome-title"),
                     text: replace_keybinding(
-                        warp_i18n::t!("onboarding-callout-nl-overrides-text"),
+                        warp_i18n::t!("onboarding-callout-terminal-mode-text"),
                         keybindings.toggle_input_mode.as_str(),
                     ),
-                    step: StepStatus::new(1, total_steps),
+                    step: StepStatus::new(0, total_steps),
                     left_button: None,
                     right_button: ButtonOptions {
                         text: if is_final_step {
@@ -176,12 +151,12 @@ fn get_agent_modality_callout_options(
             } else {
                 // NL detection was disabled - show full explanation with checkbox to enable
                 Some(CalloutOptions {
-                    title: warp_i18n::t!("onboarding-callout-nl-support-title"),
+                    title: warp_i18n::t!("onboarding-callout-terminal-mode-title"),
                     text: replace_keybinding(
-                        warp_i18n::t!("onboarding-callout-nl-support-text"),
+                        warp_i18n::t!("onboarding-callout-terminal-mode-text"),
                         keybindings.toggle_input_mode.as_str(),
                     ),
-                    step: StepStatus::new(1, total_steps),
+                    step: StepStatus::new(0, total_steps),
                     left_button: None,
                     right_button: ButtonOptions {
                         text: if is_final_step {
@@ -199,24 +174,12 @@ fn get_agent_modality_callout_options(
                 })
             }
         }
-        AgentModalityCalloutState::IntroducingAgentExperience => Some(CalloutOptions {
-            title: warp_i18n::t!("onboarding-callout-agent-experience-title"),
-            text: warp_i18n::t!("onboarding-callout-agent-experience-text"),
-            step: StepStatus::new(2, total_steps),
-            left_button: None,
-            right_button: ButtonOptions {
-                text: warp_i18n::t!("onboarding-nav-next"),
-                action: OnboardingCalloutViewAction::NextClicked,
-                keystroke: Some(Keystroke::parse("enter").unwrap_or_default()),
-            },
-            checkbox: None,
-        }),
-        AgentModalityCalloutState::UpdatedAgentInput => {
+        AgentModalityCalloutState::AgentMode => {
             if has_project {
                 Some(CalloutOptions {
-                    title: warp_i18n::t!("onboarding-callout-updated-agent-input-title"),
-                    text: warp_i18n::t!("onboarding-callout-updated-agent-input-with-project-text"),
-                    step: StepStatus::new(3, total_steps),
+                    title: warp_i18n::t!("onboarding-callout-agent-mode-title"),
+                    text: warp_i18n::t!("onboarding-callout-agent-mode-with-project-text"),
+                    step: StepStatus::new(1, total_steps),
                     left_button: Some(ButtonOptions {
                         text: warp_i18n::t!("onboarding-callout-skip-initialization"),
                         action: OnboardingCalloutViewAction::SkipClicked,
@@ -231,9 +194,12 @@ fn get_agent_modality_callout_options(
                 })
             } else {
                 Some(CalloutOptions {
-                    title: warp_i18n::t!("onboarding-callout-updated-agent-input-title"),
-                    text: warp_i18n::t!("onboarding-callout-updated-agent-input-text"),
-                    step: StepStatus::new(3, total_steps),
+                    title: warp_i18n::t!("onboarding-callout-agent-mode-title"),
+                    text: replace_keybinding(
+                        warp_i18n::t!("onboarding-callout-agent-mode-text"),
+                        keybindings.return_to_terminal_mode.as_str(),
+                    ),
+                    step: StepStatus::new(1, total_steps),
                     left_button: Some(ButtonOptions {
                         text: warp_i18n::t!("onboarding-callout-back-to-terminal"),
                         action: OnboardingCalloutViewAction::BackToTerminalClicked,
@@ -402,11 +368,11 @@ impl OnboardingCalloutView {
     }
 
     /// Returns true if the callout should be positioned above the zero state.
-    /// For UpdatedAgentInput state, always position relative to the input box instead.
+    /// For the agent experience state, always position relative to the input box instead.
     pub fn should_position_above_zero_state(&self, app: &AppContext) -> bool {
         !matches!(
             self.model.as_ref(app).state(),
-            OnboardingCalloutState::AgentModality(AgentModalityCalloutState::UpdatedAgentInput)
+            OnboardingCalloutState::AgentModality(AgentModalityCalloutState::AgentMode)
         )
     }
 

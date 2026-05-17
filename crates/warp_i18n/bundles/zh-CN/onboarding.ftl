@@ -190,6 +190,15 @@ onboarding-callout-nl-overrides-text = 你随时可以使用 <keybinding> 覆盖
 onboarding-callout-nl-support-title = 自然语言支持
 onboarding-callout-nl-support-text = 自然语言输入默认关闭。启用后，你可以用普通中文或英文提出请求，Warp 会自动判断是否应发送给智能体。你也可以随时使用 <keybinding> 覆盖自动判断。
 onboarding-callout-enable-nl-detection = 启用自然语言检测
+onboarding-callout-terminal-mode-welcome-title = 欢迎使用终端模式
+onboarding-callout-terminal-mode-title = 你正在使用终端模式
+onboarding-callout-terminal-mode-text = 在这里运行命令，就像使用普通终端一样。如果你输入自然语言问题或任务，Warp 可以建议在智能体模式中打开。你也可以随时使用 <keybinding> 覆盖自动判断。
+onboarding-callout-agent-mode-title = 你正在使用智能体模式
+onboarding-callout-agent-mode-with-project-text =
+    智能体模式会把你的问题和任务放在独立会话中，因此可以继续追问，同时不打断终端工作流。
+
+    提交下面的查询，让智能体初始化此项目；也可以点 ⊗ 清空输入并开始你自己的任务。
+onboarding-callout-agent-mode-text = 智能体模式会把你的问题和任务放在独立会话中，因此可以继续追问，同时不打断终端工作流。按 <keybinding> 可随时返回终端模式。
 onboarding-callout-agent-experience-title = 认识 Warp 的新智能体体验
 onboarding-callout-agent-experience-text = 智能体会话现在拥有独立的范围化视图，不再混在终端输出中。任何时候按 ESC 即可返回终端。
 onboarding-callout-updated-agent-input-title = 更新后的智能体输入框
