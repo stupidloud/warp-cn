@@ -29,7 +29,7 @@ use crate::settings::{
     AwsBedrockCredentialsEnabled, CanUseWarpCreditsWithByok, CodeSettings, CodebaseContextEnabled,
     FileBasedMcpEnabled, GitOperationsAutogenEnabled, IncludeAgentCommandsInHistory,
     IntelligentAutosuggestionsEnabled, MemoryEnabled, NLDInTerminalEnabled,
-    NaturalLanguageAutosuggestionsEnabled, OrchestrationEnabled, RuleSuggestionsEnabled,
+    NaturalLanguageAutosuggestionsEnabled, RuleSuggestionsEnabled,
     SharedBlockTitleGenerationEnabled, ShouldRenderCLIAgentToolbar,
     ShouldRenderUseAgentToolbarForUserCommands, ShouldShowOzUpdatesInZeroState, ShowAgentTips,
     ShowConversationHistory, ShowHintText, ThinkingDisplayMode, VoiceInputEnabled,
@@ -2305,7 +2305,6 @@ pub enum AISettingsPageAction {
     ToggleAgentAttribution,
     #[cfg(feature = "local_fs")]
     SetConversationLayout(crate::util::file::external_editor::settings::OpenConversationPreference),
-    ToggleOrchestration,
     ToggleCloudHandoff,
     ToggleAmpersandHandoff,
     ToggleShowConversationHistory,
@@ -3067,12 +3066,6 @@ impl TypedActionView for AISettingsPageView {
                     },
                     ctx
                 );
-                ctx.notify();
-            }
-            AISettingsPageAction::ToggleOrchestration => {
-                AISettings::handle(ctx).update(ctx, |settings, ctx| {
-                    report_if_error!(settings.orchestration_enabled.toggle_and_save_value(ctx));
-                });
                 ctx.notify();
             }
             AISettingsPageAction::ToggleShowConversationHistory => {
@@ -6273,7 +6266,6 @@ mod tests;
 #[derive(Default)]
 struct CloudAgentComputerUseWidget {
     toggle: SwitchStateHandle,
-    orchestration_toggle: SwitchStateHandle,
 }
 
 impl SettingsWidget for CloudAgentComputerUseWidget {
@@ -6285,7 +6277,7 @@ impl SettingsWidget for CloudAgentComputerUseWidget {
 
     fn render(
         &self,
-        view: &Self::View,
+        _view: &Self::View,
         appearance: &Appearance,
         app: &AppContext,
     ) -> Box<dyn Element> {
@@ -6349,7 +6341,7 @@ impl SettingsWidget for CloudAgentComputerUseWidget {
             None,
         );
 
-        let mut column = Flex::column()
+        Flex::column()
             .with_child(render_separator(appearance))
             .with_child(
                 build_sub_header(
@@ -6366,26 +6358,8 @@ impl SettingsWidget for CloudAgentComputerUseWidget {
                 !is_disabled,
                 app,
             ));
-
-        if FeatureFlag::Orchestration.is_enabled() {
-            let ai_settings = AISettings::as_ref(app);
-            column.add_child(render_ai_setting_toggle::<OrchestrationEnabled>(
-                warp_i18n::t!("settings-ai-orchestration"),
-                AISettingsPageAction::ToggleOrchestration,
-                *ai_settings.orchestration_enabled,
-                is_any_ai_enabled,
-                self.orchestration_toggle.clone(),
-                &view.local_only_icon_tooltip_states,
-                app,
-            ));
-            column.add_child(render_ai_setting_description(
-                warp_i18n::t!("settings-ai-orchestration-desc"),
-                is_any_ai_enabled,
-                app,
-            ));
-        }
-
-        column.finish()
+            ))
+            .finish()
     }
 }
 
