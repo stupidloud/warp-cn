@@ -8212,17 +8212,8 @@ impl Workspace {
         };
 
         if let Some((repo, diff_state_model, terminal_view)) = context_data {
-            let local_repo_path = repo
-                .as_ref()
-                .and_then(LocalOrRemotePath::to_local_path)
-                .map(Path::to_path_buf);
             self.right_panel_view.update(ctx, |right_pane_view, ctx| {
-                right_pane_view.open_code_review(
-                    local_repo_path,
-                    diff_state_model,
-                    terminal_view,
-                    ctx,
-                );
+                right_pane_view.open_code_review(repo, diff_state_model, terminal_view, ctx);
             });
         } else {
             self.right_panel_view.update(ctx, |right_panel_view, ctx| {
@@ -8243,11 +8234,7 @@ impl Workspace {
                 .repo_path
                 .as_ref()
                 .is_some_and(|target_repo_path| {
-                    self.right_panel_view.as_ref(ctx).selected_repo_path()
-                        == target_repo_path
-                            .to_local_path()
-                            .map(Path::to_path_buf)
-                            .as_ref()
+                    self.right_panel_view.as_ref(ctx).selected_repo_path() == Some(target_repo_path)
                 });
         if panel_already_showing_repo {
             return;
@@ -8410,11 +8397,9 @@ impl Workspace {
     ) {
         if pane_group_handle.as_ref(ctx).right_panel_open {
             if let Some(repo_path) = &context.repo_path {
-                if let Some(local_repo_path) = repo_path.to_local_path() {
-                    self.right_panel_view.update(ctx, |right_panel, ctx| {
-                        right_panel.update_selected_repo(local_repo_path.to_path_buf(), ctx);
-                    });
-                }
+                self.right_panel_view.update(ctx, |right_panel, ctx| {
+                    right_panel.update_selected_repo(repo_path.clone(), ctx);
+                });
             }
             return;
         }
@@ -8430,11 +8415,9 @@ impl Workspace {
             ctx,
         );
         if let Some(repo_path) = &context.repo_path {
-            if let Some(local_repo_path) = repo_path.to_local_path() {
-                self.right_panel_view.update(ctx, |right_panel, ctx| {
-                    right_panel.update_selected_repo(local_repo_path.to_path_buf(), ctx);
-                });
-            }
+            self.right_panel_view.update(ctx, |right_panel, ctx| {
+                right_panel.update_selected_repo(repo_path.clone(), ctx);
+            });
         }
     }
 
@@ -13223,7 +13206,7 @@ impl Workspace {
         ctx: &mut ViewContext<Self>,
     ) {
         let pane_group_id = pane_group.id();
-        let terminal_cwds: Vec<(EntityId, String)> = pane_group
+        let terminal_cwds: Vec<(EntityId, LocalOrRemotePath)> = pane_group
             .as_ref(ctx)
             .terminal_view_working_directories(ctx)
             .filter_map(|(id, cwd)| cwd.map(|c| (id, c)))
@@ -14599,6 +14582,20 @@ impl Workspace {
                         });
                     }
                 }
+
+                // Register the remote repo in WorkingDirectoriesModel so it
+                // appears in the code review dropdown via RepositoriesChanged.
+                // Also map the repo to the terminal that navigated there so
+                // `find_review_terminal` can resolve the preferred terminal.
+                let repo_key = LocalOrRemotePath::Remote(remote_path.clone());
+                let terminal_view_id =
+                    pane_group.read(ctx, |pg, ctx| pg.active_session_view(ctx).map(|tv| tv.id()));
+                self.working_directories_model.update(ctx, |model, ctx| {
+                    model.register_remote_repo(pane_group_id, repo_key.clone(), ctx);
+                    if let Some(terminal_id) = terminal_view_id {
+                        model.register_terminal_for_repo(pane_group_id, repo_key, terminal_id);
+                    }
+                });
             }
             #[cfg(not(feature = "local_fs"))]
             pane_group::Event::RemoteRepoNavigated { .. } => {}
@@ -15197,13 +15194,10 @@ impl Workspace {
                         );
                     });
 
-                let Some(local_repo_path) = repo_path.to_local_path() else {
-                    return;
-                };
                 let Some(code_review_view) = self
                     .working_directories_model
                     .as_ref(ctx)
-                    .get_code_review_view(pane_group.id(), local_repo_path)
+                    .get_code_review_view(pane_group.id(), repo_path)
                 else {
                     return;
                 };
@@ -15230,13 +15224,10 @@ impl Workspace {
                         );
                     });
 
-                let Some(local_repo_path) = repo_path.to_local_path() else {
-                    return;
-                };
                 if let Some(code_review_view) = self
                     .working_directories_model
                     .as_ref(ctx)
-                    .get_code_review_view(pane_group.id(), local_repo_path)
+                    .get_code_review_view(pane_group.id(), repo_path)
                 {
                     code_review_view.update(ctx, |code_review_view, ctx| {
                         code_review_view.set_diff_base(diff_mode.clone(), ctx);
