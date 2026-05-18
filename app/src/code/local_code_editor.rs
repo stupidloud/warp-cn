@@ -1196,21 +1196,19 @@ impl LocalCodeEditorView {
         match &location {
             BufferFileLocation::Local(path) => {
                 editor.update(ctx, |editor, ctx| {
-                    editor.set_language_with_path(path, ctx);
+                    editor.set_language_with_local_path(path, ctx);
                     editor.model.update(ctx, |model, ctx| {
                         model.rebuild_layout_with_syntax_highlighting(ctx)
                     });
                 });
             }
             BufferFileLocation::Remote(remote_path) => {
-                if let Some(ext) = remote_path.path.extension() {
-                    editor.update(ctx, |editor, ctx| {
-                        editor.set_language_with_name(ext, ctx);
-                        editor.model.update(ctx, |model, ctx| {
-                            model.rebuild_layout_with_syntax_highlighting(ctx)
-                        });
+                editor.update(ctx, |editor, ctx| {
+                    editor.set_language_with_path(&remote_path.path, ctx);
+                    editor.model.update(ctx, |model, ctx| {
+                        model.rebuild_layout_with_syntax_highlighting(ctx)
                     });
-                }
+                });
             }
         }
 
@@ -1643,7 +1641,7 @@ impl LocalCodeEditorView {
         me.set_new_file(false);
 
         me.editor.update(ctx, |editor, ctx| {
-            editor.set_language_with_path(&path, ctx);
+            editor.set_language_with_local_path(&path, ctx);
         });
 
         let content = me.editor.as_ref(ctx).text(ctx).into_string();
@@ -1733,7 +1731,7 @@ impl LocalCodeEditorView {
         });
 
         self.editor.update(ctx, |editor, ctx| {
-            editor.set_language_with_path(new_path, ctx);
+            editor.set_language_with_local_path(new_path, ctx);
         });
 
         // Re-subscribe to GlobalBufferModel events for the new file_id.
