@@ -2307,6 +2307,7 @@ pub enum AISettingsPageAction {
     SetConversationLayout(crate::util::file::external_editor::settings::OpenConversationPreference),
     ToggleCloudHandoff,
     ToggleAmpersandHandoff,
+    ToggleAutoHandoffOnSleep,
     ToggleShowConversationHistory,
     ToggleAutoToggleRichInput,
     ToggleAutoOpenRichInputOnCLIAgentStart,
@@ -3088,6 +3089,14 @@ impl TypedActionView for AISettingsPageView {
                 AISettings::handle(ctx).update(ctx, |settings, ctx| {
                     report_if_error!(settings
                         .should_force_disable_ampersand_handoff
+                        .toggle_and_save_value(ctx));
+                });
+                ctx.notify();
+            }
+            AISettingsPageAction::ToggleAutoHandoffOnSleep => {
+                AISettings::handle(ctx).update(ctx, |settings, ctx| {
+                    report_if_error!(settings
+                        .auto_handoff_on_sleep_enabled
                         .toggle_and_save_value(ctx));
                 });
                 ctx.notify();
@@ -6366,6 +6375,7 @@ impl SettingsWidget for CloudAgentComputerUseWidget {
 #[derive(Default)]
 struct CloudHandoffWidget {
     handoff_toggle: SwitchStateHandle,
+    auto_handoff_on_sleep_toggle: SwitchStateHandle,
     ampersand_toggle: SwitchStateHandle,
 }
 
@@ -6373,7 +6383,7 @@ impl SettingsWidget for CloudHandoffWidget {
     type View = AISettingsPageView;
 
     fn search_terms(&self) -> &str {
-        "cloud handoff ampersand & move to cloud local"
+        "cloud handoff auto sleep ampersand & move to cloud local"
     }
 
     fn should_render(&self, _app: &AppContext) -> bool {
@@ -6460,6 +6470,38 @@ impl SettingsWidget for CloudHandoffWidget {
             ));
 
         if ai_settings.is_cloud_handoff_enabled(app) {
+            if ai_settings
+                .auto_handoff_on_sleep_enabled
+                .is_supported_on_current_platform()
+            {
+                let auto_handoff_on_sleep_toggle = ui_builder
+                    .switch(self.auto_handoff_on_sleep_toggle.clone())
+                    .check(*ai_settings.auto_handoff_on_sleep_enabled)
+                    .build()
+                    .on_click(move |ctx, _, _| {
+                        ctx.dispatch_typed_action(AISettingsPageAction::ToggleAutoHandoffOnSleep);
+                    })
+                    .finish();
+                let auto_handoff_on_sleep_row = build_toggle_element(
+                    render_body_item_label::<AISettingsPageAction>(
+                        "Auto-handoff before sleep".to_string(),
+                        Some(styles::header_font_color(true, app)),
+                        None,
+                        LocalOnlyIconState::Hidden,
+                        ToggleState::Enabled,
+                        appearance,
+                    ),
+                    auto_handoff_on_sleep_toggle,
+                    appearance,
+                    None,
+                );
+                column.add_child(auto_handoff_on_sleep_row);
+                column.add_child(render_ai_setting_description(
+                    "When macOS is about to sleep, automatically moves the most recently focused running local Warp Agent conversation to Cloud Mode so it can keep working.",
+                    true,
+                    app,
+                ));
+            }
             let ampersand_toggle = ui_builder
                 .switch(self.ampersand_toggle.clone())
                 .check(!*ai_settings.should_force_disable_ampersand_handoff)
