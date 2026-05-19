@@ -49,6 +49,7 @@ pub mod cloud_agent_config;
 pub mod cloud_agent_settings;
 pub mod cloud_environments;
 pub(crate) mod codebase_index_backend;
+pub mod connected_self_hosted_workers;
 pub mod execution_profiles;
 pub mod facts;
 pub(crate) mod generate_block_title;

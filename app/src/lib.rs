@@ -206,6 +206,7 @@ use crate::ai::codebase_index_backend::is_local_codebase_index_backend;
 use crate::ai::codebase_index_backend::{
     codebase_context_limits_for_backend, is_codebase_context_enabled_for_indexing,
 };
+use crate::ai::connected_self_hosted_workers::ConnectedSelfHostedWorkersModel;
 use crate::ai::document::ai_document_model::AIDocumentModel;
 use crate::ai::facts::manager::AIFactManager;
 use crate::ai::harness_availability::HarnessAvailabilityModel;
@@ -1908,6 +1909,7 @@ pub(crate) fn initialize_app(
 
     ctx.add_singleton_model(LLMPreferences::new);
     ctx.add_singleton_model(HarnessAvailabilityModel::new);
+    ctx.add_singleton_model(ConnectedSelfHostedWorkersModel::new);
 
     let tip_model_handle = ctx.add_singleton_model(|ctx| {
         ai::agent_tips::AITipModel::<ai::AgentTip>::new_for_agent_tips(ctx)
