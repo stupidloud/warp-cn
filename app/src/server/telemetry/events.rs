@@ -2834,6 +2834,9 @@ pub enum TelemetryEvent {
         exit_code: Option<i32>,
         /// Whether the SSH subprocess was killed by a signal.
         signal_killed: Option<bool>,
+        /// Last lines from the proxy's stderr, if available.
+        /// Provides server-side context for why the proxy exited.
+        proxy_stderr: Option<String>,
     },
     /// Emitted when an established remote server connection drops.
     RemoteServerDisconnection {
@@ -4199,6 +4202,7 @@ impl TelemetryEvent {
                 remote_arch,
                 exit_code,
                 signal_killed,
+                proxy_stderr,
             } => Some(json!({
                 "phase": phase,
                 "error": error,
@@ -4206,6 +4210,7 @@ impl TelemetryEvent {
                 "remote_arch": remote_arch,
                 "exit_code": exit_code,
                 "signal_killed": signal_killed,
+                "proxy_stderr": proxy_stderr,
             })),
             TelemetryEvent::RemoteServerDisconnection {
                 remote_os,

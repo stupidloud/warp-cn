@@ -243,13 +243,14 @@ impl RemoteTransport for SshTransport {
                 .take()
                 .ok_or_else(|| anyhow::anyhow!("Failed to capture child stderr"))?;
 
-            let (client, event_rx) =
+            let (client, event_rx, stderr_tail) =
                 RemoteServerClient::from_child_streams(stdin, stdout, stderr, &executor);
             Ok(Connection {
                 client,
                 event_rx,
                 child,
                 control_path: Some(socket_path),
+                stderr_tail,
             })
         })
     }
