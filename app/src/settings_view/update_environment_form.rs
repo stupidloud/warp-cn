@@ -21,7 +21,7 @@ use crate::{
     server::ids::SyncId,
     ui_components::{buttons::icon_button, icons::Icon},
     view_components::{
-        action_button::{ActionButton, DangerSecondaryTheme, PrimaryTheme},
+        action_button::{ActionButton, DangerSecondaryTheme, PrimaryTheme, SecondaryTheme},
         render_warning_box, SubmittableTextInput, SubmittableTextInputEvent,
         WarningBoxButtonConfig, WarningBoxConfig,
     },
@@ -246,11 +246,84 @@ enum SuggestImageState {
     },
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct EnvironmentFormCopy {
+    name_placeholder: &'static str,
+    repos_placeholder_authed: &'static str,
+    repos_placeholder_unauthed: &'static str,
+    docker_image_label: &'static str,
+    docker_image_placeholder: &'static str,
+    description_placeholder: &'static str,
+    setup_commands_placeholder: &'static str,
+    setup_commands_helper: &'static str,
+    show_description_character_count: bool,
+}
+
+impl EnvironmentFormCopy {
+    pub fn orchestration_modal() -> Self {
+        Self {
+            name_placeholder: "e.g., dev-env",
+            repos_placeholder_authed: warp_i18n::t_static!(
+                "settings-environments-update-form-repos-placeholder-browse"
+            ),
+            repos_placeholder_unauthed: warp_i18n::t_static!(
+                "settings-environments-update-form-repos-placeholder-unauthed"
+            ),
+            docker_image_label: warp_i18n::t_static!(
+                "settings-environments-update-form-label-docker-image"
+            ),
+            docker_image_placeholder: "e.g., node:20-alpine",
+            description_placeholder: warp_i18n::t_static!(
+                "settings-environments-update-form-description-placeholder"
+            ),
+            setup_commands_placeholder: "e.g., node start",
+            setup_commands_helper: warp_i18n::t_static!(
+                "settings-environments-update-form-setup-help-short"
+            ),
+            show_description_character_count: false,
+        }
+    }
+}
+
+impl Default for EnvironmentFormCopy {
+    fn default() -> Self {
+        Self {
+            name_placeholder: warp_i18n::t_static!(
+                "settings-environments-update-form-name-placeholder"
+            ),
+            repos_placeholder_authed: warp_i18n::t_static!(
+                "settings-environments-update-form-repos-placeholder-authed"
+            ),
+            repos_placeholder_unauthed: warp_i18n::t_static!(
+                "settings-environments-update-form-repos-placeholder-unauthed"
+            ),
+            docker_image_label: warp_i18n::t_static!(
+                "settings-environments-update-form-label-docker-image-reference"
+            ),
+            docker_image_placeholder: warp_i18n::t_static!(
+                "settings-environments-update-form-docker-image-placeholder"
+            ),
+            description_placeholder: warp_i18n::t_static!(
+                "settings-environments-update-form-description-placeholder"
+            ),
+            setup_commands_placeholder: warp_i18n::t_static!(
+                "settings-environments-update-form-setup-placeholder"
+            ),
+            setup_commands_helper: warp_i18n::t_static!("settings-environments-form-setup-help"),
+            show_description_character_count: true,
+        }
+    }
+}
 pub struct UpdateEnvironmentForm {
     mode: EnvironmentFormMode,
     form_state: EnvironmentFormValues,
     repos_input: String,
     github_auth_redirect_target: GithubAuthRedirectTarget,
+    copy: EnvironmentFormCopy,
+    field_max_width: f32,
+    field_spacing: f32,
+    description_height: f32,
+    show_repo_helper_text: bool,
 
     // Editor views
     name_editor: ViewHandle<EditorView>,
@@ -265,6 +338,7 @@ pub struct UpdateEnvironmentForm {
     // Action buttons
     submit_button: ViewHandle<ActionButton>,
     delete_button: ViewHandle<ActionButton>,
+    cancel_button: ViewHandle<ActionButton>,
     back_button_mouse_state: MouseStateHandle,
 
     // Share-with-team checkbox (Create mode only, when user is on a team)
@@ -304,6 +378,8 @@ pub struct UpdateEnvironmentForm {
     /// When true (default), renders the header with back button, title, and submit button.
     /// When false, skips the header and renders the submit button at the bottom-right of the form.
     show_header: bool,
+    show_footer_cancel_button: bool,
+    show_share_with_team_controls: bool,
 
     /// When true, pressing Escape in any editor will emit a Cancelled event.
     /// This should only be enabled for contexts where the form is used as a modal (e.g., first-time setup).
@@ -356,24 +432,18 @@ impl UpdateEnvironmentForm {
         ctx.subscribe_to_model(&Appearance::handle(ctx), |form, _, _, ctx| {
             form.update_editor_text_colors(ctx);
         });
+        let copy = EnvironmentFormCopy::default();
         // Create editors
-        let name_editor = Self::create_single_line_editor(
-            warp_i18n::t_static!("settings-environments-update-form-name-placeholder"),
-            ctx,
-        );
+        let name_editor = Self::create_single_line_editor(copy.name_placeholder, ctx);
         let description_editor = Self::create_description_editor(ctx);
-        let docker_image_editor = Self::create_single_line_editor(
-            warp_i18n::t_static!("settings-environments-update-form-docker-image-placeholder"),
-            ctx,
-        );
-        let repos_input_editor = Self::create_single_line_editor(
-            warp_i18n::t_static!("settings-environments-update-form-repos-placeholder-authed"),
-            ctx,
-        );
+        let docker_image_editor =
+            Self::create_single_line_editor(copy.docker_image_placeholder, ctx);
+        let repos_input_editor =
+            Self::create_single_line_editor(copy.repos_placeholder_authed, ctx);
 
         let setup_commands_input = ctx.add_typed_action_view(|ctx| {
             let mut input = SubmittableTextInput::new(ctx);
-            input.set_placeholder_text("e.g. cd my-repo && pip install -r requirements.txt", ctx);
+            input.set_placeholder_text(copy.setup_commands_placeholder, ctx);
             // Keep this consistent with other form inputs (e.g. repos): caller controls spacing.
             input.set_outer_margins(0., 0., ctx);
             input
@@ -440,6 +510,15 @@ impl UpdateEnvironmentForm {
             })
         });
 
+        let cancel_button = ctx.add_typed_action_view(|_| {
+            ActionButton::new(
+                warp_i18n::t!("settings-environments-update-form-button-cancel"),
+                SecondaryTheme,
+            )
+            .on_click(|ctx| {
+                ctx.dispatch_typed_action(UpdateEnvironmentFormAction::Cancel);
+            })
+        });
         // Set up editor subscriptions
         ctx.subscribe_to_view(&name_editor, |me, _, event, ctx| match event {
             crate::editor::Event::Edited(_) => {
@@ -574,6 +653,11 @@ impl UpdateEnvironmentForm {
             form_state: EnvironmentFormValues::default(),
             repos_input: String::new(),
             github_auth_redirect_target: GithubAuthRedirectTarget::SettingsEnvironments,
+            copy,
+            field_max_width: DROPDOWN_MAX_WIDTH,
+            field_spacing: FORM_FIELD_SPACING,
+            description_height: FORM_DESCRIPTION_HEIGHT,
+            show_repo_helper_text: true,
             name_editor,
             description_editor,
             docker_image_editor,
@@ -582,6 +666,7 @@ impl UpdateEnvironmentForm {
             remove_setup_command_mouse_states: Vec::new(),
             submit_button,
             delete_button,
+            cancel_button,
             back_button_mouse_state: MouseStateHandle::default(),
             share_with_team: false,
             share_with_team_checkbox_mouse_state: MouseStateHandle::default(),
@@ -606,6 +691,8 @@ impl UpdateEnvironmentForm {
             image_link_button_mouse_state: MouseStateHandle::default(),
             edit_repos_modified: false,
             show_header: true,
+            show_footer_cancel_button: false,
+            show_share_with_team_controls: true,
             should_handle_escape_from_editor: false,
             auth_source: AuthSource::default(),
         };
@@ -629,6 +716,79 @@ impl UpdateEnvironmentForm {
 
     pub fn set_github_auth_redirect_target(&mut self, target: GithubAuthRedirectTarget) {
         self.github_auth_redirect_target = target;
+    }
+
+    pub fn set_copy(&mut self, copy: EnvironmentFormCopy, ctx: &mut ViewContext<Self>) {
+        self.copy = copy;
+        self.name_editor.update(ctx, |editor, ctx| {
+            editor.set_placeholder_text(copy.name_placeholder, ctx);
+        });
+        self.description_editor.update(ctx, |editor, ctx| {
+            editor.set_placeholder_text(copy.description_placeholder, ctx);
+        });
+        self.docker_image_editor.update(ctx, |editor, ctx| {
+            editor.set_placeholder_text(copy.docker_image_placeholder, ctx);
+        });
+        self.repos_input_editor.update(ctx, |editor, ctx| {
+            editor.set_placeholder_text(copy.repos_placeholder_authed, ctx);
+        });
+        self.setup_commands_input.update(ctx, |input, ctx| {
+            input.set_placeholder_text(copy.setup_commands_placeholder, ctx);
+        });
+        self.update_repos_input_placeholder(ctx);
+        ctx.notify();
+    }
+
+    pub fn set_show_footer_cancel_button(&mut self, show: bool, ctx: &mut ViewContext<Self>) {
+        self.show_footer_cancel_button = show;
+        ctx.notify();
+    }
+
+    pub fn set_field_max_width(&mut self, width: f32, ctx: &mut ViewContext<Self>) {
+        self.field_max_width = width;
+        ctx.notify();
+    }
+    pub fn set_field_spacing(&mut self, spacing: f32, ctx: &mut ViewContext<Self>) {
+        self.field_spacing = spacing;
+        ctx.notify();
+    }
+
+    pub fn set_description_height(&mut self, height: f32, ctx: &mut ViewContext<Self>) {
+        self.description_height = height;
+        ctx.notify();
+    }
+
+    pub fn set_show_repo_helper_text(&mut self, show: bool, ctx: &mut ViewContext<Self>) {
+        self.show_repo_helper_text = show;
+        ctx.notify();
+    }
+
+    pub fn set_show_share_with_team_controls(&mut self, show: bool, ctx: &mut ViewContext<Self>) {
+        self.show_share_with_team_controls = show;
+        ctx.notify();
+    }
+    pub fn configure_for_orchestration_modal(&mut self, ctx: &mut ViewContext<Self>) {
+        self.set_copy(EnvironmentFormCopy::orchestration_modal(), ctx);
+        self.show_footer_cancel_button = true;
+        self.show_share_with_team_controls = false;
+        self.field_spacing = 10.;
+        self.description_height = 52.;
+        self.show_repo_helper_text = false;
+        ctx.notify();
+    }
+
+    #[cfg(test)]
+    pub(crate) fn uses_orchestration_modal_configuration_for_test(&self) -> bool {
+        self.copy == EnvironmentFormCopy::orchestration_modal()
+            && !self.show_header
+            && self.show_footer_cancel_button
+            && !self.show_share_with_team_controls
+            && (self.field_spacing - 10.).abs() < f32::EPSILON
+            && (self.description_height - 52.).abs() < f32::EPSILON
+            && !self.show_repo_helper_text
+            && self.github_auth_redirect_target == GithubAuthRedirectTarget::FocusCloudMode
+            && self.auth_source == AuthSource::CloudSetup
+            && self.should_handle_escape_from_editor
     }
 
     #[cfg(test)]
@@ -684,24 +844,7 @@ impl UpdateEnvironmentForm {
     /// When `false`, the submit button is rendered at the bottom-right of the form instead.
     pub fn set_show_header(&mut self, show_header: bool, ctx: &mut ViewContext<Self>) {
         self.show_header = show_header;
-
-        // Update button text based on mode when header is hidden
-        if !show_header {
-            let button_text: String = match &self.mode {
-                EnvironmentFormMode::Create => {
-                    warp_i18n::t!("settings-environments-update-form-button-create-environment")
-                        .to_string()
-                }
-                EnvironmentFormMode::Edit { .. } => {
-                    warp_i18n::t!("settings-environments-update-form-button-save-environment")
-                        .to_string()
-                }
-            };
-            self.submit_button.update(ctx, |button, ctx| {
-                button.set_label(button_text, ctx);
-            });
-        }
-
+        self.update_submit_button_label(ctx);
         ctx.notify();
     }
 
@@ -721,6 +864,26 @@ impl UpdateEnvironmentForm {
     /// Focus the Name editor (the first field in the form).
     pub fn focus(&self, ctx: &mut ViewContext<Self>) {
         ctx.focus(&self.name_editor);
+    }
+
+    fn update_submit_button_label(&mut self, ctx: &mut ViewContext<Self>) {
+        let button_text = match (&self.mode, self.show_header) {
+            (EnvironmentFormMode::Create, true) => {
+                warp_i18n::t!("settings-environments-update-form-button-create")
+            }
+            (EnvironmentFormMode::Create, false) => {
+                warp_i18n::t!("settings-environments-update-form-button-create-environment")
+            }
+            (EnvironmentFormMode::Edit { .. }, true) => {
+                warp_i18n::t!("settings-environments-update-form-button-save")
+            }
+            (EnvironmentFormMode::Edit { .. }, false) => {
+                warp_i18n::t!("settings-environments-update-form-button-save-environment")
+            }
+        };
+        self.submit_button.update(ctx, |button, ctx| {
+            button.set_label(button_text, ctx);
+        });
     }
 
     fn apply_mode(&mut self, init_args: &EnvironmentFormInitArgs, ctx: &mut ViewContext<Self>) {
@@ -802,6 +965,8 @@ impl UpdateEnvironmentForm {
             }
         }
 
+        self.update_submit_button_label(ctx);
+
         // Reset suggest image state for this session.
         //
         // Note: We intentionally do not set `suggest_image_last_attempt_key` here.
@@ -828,11 +993,12 @@ impl UpdateEnvironmentForm {
     }
 
     fn update_repos_input_placeholder(&mut self, ctx: &mut ViewContext<Self>) {
-        let placeholder: String = if self.github_dropdown_state.auth_url.is_some() {
-            warp_i18n::t!("settings-environments-update-form-repos-placeholder-unauthed")
-                .to_string()
+        let placeholder = if self.github_dropdown_state.auth_url.is_some()
+            || self.github_dropdown_state.load_error_message.is_some()
+        {
+            self.copy.repos_placeholder_unauthed
         } else {
-            warp_i18n::t!("settings-environments-update-form-repos-placeholder-authed").to_string()
+            self.copy.repos_placeholder_authed
         };
         self.repos_input_editor.update(ctx, |editor, ctx| {
             editor.set_placeholder_text(placeholder, ctx);
@@ -912,10 +1078,7 @@ impl UpdateEnvironmentForm {
                 ..Default::default()
             };
             let mut editor = EditorView::new(options, ctx);
-            editor.set_placeholder_text(
-                "e.g., this environment is for all front end focused agents",
-                ctx,
-            );
+            editor.set_placeholder_text(DESCRIPTION_PLACEHOLDER, ctx);
             editor
         })
     }
@@ -1248,15 +1411,17 @@ impl UpdateEnvironmentForm {
                             )
                             .to_string(),
                         );
+                        me.update_repos_input_placeholder(ctx);
                     }
                     Err(e) => {
+                        debug!("Failed to load GitHub repos: {e}");
                         me.github_dropdown_state.load_error_message = Some(
                             warp_i18n::t!(
-                                "settings-environments-update-form-error-load-github-repos-with-error",
-                                error = e.to_string()
+                                "settings-environments-update-form-error-load-github-repos"
                             )
                             .to_string(),
                         );
+                        me.update_repos_input_placeholder(ctx);
                     }
                 }
 
@@ -1506,7 +1671,8 @@ impl UpdateEnvironmentForm {
     }
 
     fn should_show_share_with_team_checkbox(&self, app: &AppContext) -> bool {
-        matches!(self.mode, EnvironmentFormMode::Create)
+        self.show_share_with_team_controls
+            && matches!(self.mode, EnvironmentFormMode::Create)
             && UserWorkspaces::as_ref(app).current_team_uid().is_some()
     }
 
@@ -1592,7 +1758,7 @@ impl UpdateEnvironmentForm {
             WarningBoxConfig::new(warp_i18n::t!(
                 "settings-environments-update-form-personal-warning"
             ))
-            .with_width(DROPDOWN_MAX_WIDTH),
+            .with_width(self.field_max_width),
             appearance,
         ))
     }
@@ -1793,7 +1959,7 @@ impl UpdateEnvironmentForm {
             });
 
         let helper_text = Text::new(
-            t!("settings-environments-form-setup-help"),
+            self.copy.setup_commands_helper,
             appearance.ui_font_family(),
             appearance.ui_font_size() * 0.85,
         )
@@ -1821,7 +1987,7 @@ impl UpdateEnvironmentForm {
 
         field.add_child(
             ConstrainedBox::new(Container::new(list).finish())
-                .with_max_width(DROPDOWN_MAX_WIDTH)
+                .with_max_width(self.field_max_width)
                 .finish(),
         );
 
@@ -1861,28 +2027,29 @@ impl UpdateEnvironmentForm {
             .with_background(theme.surface_2())
             .finish(),
         )
-        .with_min_height(FORM_DESCRIPTION_HEIGHT)
+        .with_min_height(self.description_height)
         .finish();
 
         field.add_child(editor_container);
 
-        // Character count display
-        let char_count = self
-            .description_editor
-            .as_ref(app)
-            .buffer_text(app)
-            .chars()
-            .count();
-        let count_text = format!("{} / {} characters", char_count, DESCRIPTION_MAX_CHARS);
-        field.add_child(
-            Text::new(
-                count_text,
-                appearance.ui_font_family(),
-                appearance.ui_font_size() * 0.85,
-            )
-            .with_color(theme.nonactive_ui_text_color().into())
-            .finish(),
-        );
+        if self.copy.show_description_character_count {
+            let char_count = self
+                .description_editor
+                .as_ref(app)
+                .buffer_text(app)
+                .chars()
+                .count();
+            let count_text = format!("{char_count} / {DESCRIPTION_MAX_CHARS} characters");
+            field.add_child(
+                Text::new(
+                    count_text,
+                    appearance.ui_font_family(),
+                    appearance.ui_font_size() * 0.85,
+                )
+                .with_color(theme.nonactive_ui_text_color().into())
+                .finish(),
+            );
+        }
 
         field.finish()
     }
@@ -1921,12 +2088,10 @@ impl UpdateEnvironmentForm {
 
         field.add_child(self.render_repos_field_label(appearance));
 
-        // Selected repo chips (if any)
         if !self.form_state.selected_repos.is_empty() {
             field.add_child(self.render_selected_repo_chips(appearance));
         }
 
-        // Disabled input with loading placeholder
         let loading_input = Container::new(
             ConstrainedBox::new(
                 Flex::column()
@@ -1966,15 +2131,12 @@ impl UpdateEnvironmentForm {
             .with_cross_axis_alignment(CrossAxisAlignment::Stretch)
             .with_spacing(FORM_LABEL_SPACING);
 
-        // Label
         field.add_child(self.render_repos_field_label(appearance));
 
-        // Selected repo chips (if any)
         if !self.form_state.selected_repos.is_empty() {
             field.add_child(self.render_selected_repo_chips(appearance));
         }
 
-        // Input for pasting repo URLs manually
         let editor = Clipped::new(ChildView::new(&self.repos_input_editor).finish()).finish();
 
         let input_container = Container::new(
@@ -2058,11 +2220,13 @@ impl UpdateEnvironmentForm {
             .with_child(Expanded::new(1., input_container).finish())
             .with_child(auth_button)
             .finish();
+
         field.add_child(
             ConstrainedBox::new(row)
-                .with_max_width(DROPDOWN_MAX_WIDTH)
+                .with_max_width(self.field_max_width)
                 .finish(),
         );
+
         field.finish()
     }
 
@@ -2082,30 +2246,25 @@ impl UpdateEnvironmentForm {
             .with_cross_axis_alignment(CrossAxisAlignment::Stretch)
             .with_spacing(FORM_LABEL_SPACING);
 
-        // Label
         field.add_child(self.render_repos_field_label(appearance));
 
-        // Selected repo chips (if any)
         if !self.form_state.selected_repos.is_empty() {
             field.add_child(self.render_selected_repo_chips(appearance));
         }
 
-        let error_input = Container::new(
+        let editor = Clipped::new(ChildView::new(&self.repos_input_editor).finish()).finish();
+
+        let input_container = Container::new(
             ConstrainedBox::new(
                 Flex::column()
                     .with_main_axis_size(MainAxisSize::Max)
                     .with_main_axis_alignment(MainAxisAlignment::Center)
                     .with_child(
-                        Container::new(
-                            Text::new(
-                                message,
-                                appearance.ui_font_family(),
-                                appearance.ui_font_size(),
-                            )
-                            .with_color(theme.ui_error_color())
-                            .finish(),
+                        Clipped::new(
+                            Container::new(editor)
+                                .with_horizontal_padding(FORM_INPUT_HORIZONTAL_PADDING)
+                                .finish(),
                         )
-                        .with_horizontal_padding(FORM_INPUT_HORIZONTAL_PADDING)
                         .finish(),
                     )
                     .finish(),
@@ -2176,14 +2335,24 @@ impl UpdateEnvironmentForm {
         let row = Flex::row()
             .with_cross_axis_alignment(CrossAxisAlignment::Center)
             .with_spacing(8.)
-            .with_child(Expanded::new(1., error_input).finish())
+            .with_child(Expanded::new(1., input_container).finish())
             .with_child(retry_button)
             .finish();
 
         field.add_child(
             ConstrainedBox::new(row)
-                .with_max_width(DROPDOWN_MAX_WIDTH)
+                .with_max_width(self.field_max_width)
                 .finish(),
+        );
+        field.add_child(
+            Text::new(
+                message,
+                appearance.ui_font_family(),
+                appearance.ui_font_size() * 0.85,
+            )
+            .soft_wrap(true)
+            .with_color(theme.ui_error_color())
+            .finish(),
         );
 
         field.finish()
@@ -2371,8 +2540,9 @@ impl UpdateEnvironmentForm {
 
         field.add_child(input_row);
 
-        // Helper text
-        field.add_child(self.render_repo_helper_text_row(appearance));
+        if self.show_repo_helper_text {
+            field.add_child(self.render_repo_helper_text_row(appearance));
+        }
         field.finish()
     }
 
@@ -2680,7 +2850,7 @@ impl UpdateEnvironmentForm {
         // Constrain height and width
         let dropdown_content = ConstrainedBox::new(scrollable)
             .with_max_height(DROPDOWN_MAX_HEIGHT)
-            .with_max_width(DROPDOWN_MAX_WIDTH)
+            .with_max_width(self.field_max_width)
             .finish();
 
         // Wrap in container with border and background
@@ -2904,7 +3074,7 @@ impl UpdateEnvironmentForm {
 
         // Label (without suggest button)
         field.add_child(Self::render_form_label(
-            warp_i18n::t_static!("settings-environments-update-form-label-docker-image-reference"),
+            self.copy.docker_image_label,
             true,
             appearance,
         ));
@@ -2952,7 +3122,7 @@ impl UpdateEnvironmentForm {
 
         field.add_child(
             ConstrainedBox::new(row)
-                .with_width(DROPDOWN_MAX_WIDTH)
+                .with_max_width(self.field_max_width)
                 .finish(),
         );
 
@@ -3136,7 +3306,7 @@ impl UpdateEnvironmentForm {
                     WarningBoxConfig::new(warp_i18n::t!(
                         "settings-environments-update-form-grant-github-access"
                     ))
-                    .with_width(DROPDOWN_MAX_WIDTH)
+                    .with_width(self.field_max_width)
                     .with_button(button),
                     appearance,
                 ))
@@ -3145,7 +3315,7 @@ impl UpdateEnvironmentForm {
                 if key == current_key =>
             {
                 Some(render_warning_box(
-                    WarningBoxConfig::new(message).with_width(DROPDOWN_MAX_WIDTH),
+                    WarningBoxConfig::new(message).with_width(self.field_max_width),
                     appearance,
                 ))
             }
@@ -3173,7 +3343,7 @@ impl UpdateEnvironmentForm {
             ))
             .with_description(reason)
             .with_icon(Icon::AlertTriangle)
-            .with_width(DROPDOWN_MAX_WIDTH)
+            .with_width(self.field_max_width)
             .with_button(button),
             appearance,
         )
@@ -3422,7 +3592,7 @@ impl View for UpdateEnvironmentForm {
         let mut page = Flex::column()
             .with_cross_axis_alignment(CrossAxisAlignment::Stretch)
             .with_main_axis_size(MainAxisSize::Min)
-            .with_spacing(FORM_FIELD_SPACING);
+            .with_spacing(self.field_spacing);
 
         // Header row with back button, title, and action button (only when show_header is true)
         if self.show_header {
@@ -3460,8 +3630,19 @@ impl View for UpdateEnvironmentForm {
                 footer_row.add_child(Empty::new().finish());
             }
 
-            // Submit actions on the right
-            footer_row.add_child(self.render_submit_actions(appearance, app, &self.submit_button));
+            let mut footer_actions = Flex::row()
+                .with_main_axis_size(MainAxisSize::Min)
+                .with_cross_axis_alignment(CrossAxisAlignment::Center)
+                .with_spacing(8.);
+            if self.show_footer_cancel_button {
+                footer_actions.add_child(ChildView::new(&self.cancel_button).finish());
+            }
+            footer_actions.add_child(self.render_submit_actions(
+                appearance,
+                app,
+                &self.submit_button,
+            ));
+            footer_row.add_child(footer_actions.finish());
 
             page.add_child(footer_row.finish());
         } else if matches!(&self.mode, EnvironmentFormMode::Edit { .. }) {
