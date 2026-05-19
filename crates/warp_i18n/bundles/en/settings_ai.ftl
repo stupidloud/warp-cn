@@ -104,6 +104,8 @@ settings-ai-voice-input-key = Key for Activating Voice Input
 settings-ai-voice-input-key-tip = Press and hold to activate.
 
 settings-ai-show-conv-history = Show conversation history in tools panel
+settings-ai-feedback-skill = Enable built-in feedback skill
+settings-ai-feedback-skill-desc = Let Oz use Warp's built-in skill for turning Warp product feedback into GitHub issues.
 settings-ai-thinking-display = Agent thinking display
 settings-ai-thinking-display-desc = Controls how reasoning/thinking traces are displayed.
 settings-ai-existing-conv-layout = Preferred layout when opening existing agent conversations

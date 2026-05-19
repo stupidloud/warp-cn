@@ -5245,7 +5245,7 @@ impl Input {
         // Resolve the skill from SkillManager
         let skill = match SkillManager::handle(ctx)
             .as_ref(ctx)
-            .skill_by_reference(&reference)
+            .active_skill_by_reference(&reference, ctx)
         {
             Some(skill) => skill.clone(),
             None => {

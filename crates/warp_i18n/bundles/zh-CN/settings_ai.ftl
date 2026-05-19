@@ -104,6 +104,8 @@ settings-ai-voice-input-key = 语音输入激活键
 settings-ai-voice-input-key-tip = 按住以激活。
 
 settings-ai-show-conv-history = 在工具面板中显示会话历史
+settings-ai-feedback-skill = 启用内置反馈技能
+settings-ai-feedback-skill-desc = 允许 Oz 使用 Warp 内置技能，将 Warp 产品反馈整理为 GitHub issue。
 settings-ai-thinking-display = 智能体思考显示
 settings-ai-thinking-display-desc = 控制推理 / 思考轨迹的显示方式。
 settings-ai-existing-conv-layout = 打开已有智能体会话时的首选布局
