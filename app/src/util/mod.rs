@@ -9,7 +9,6 @@ pub mod image;
 pub(crate) mod link_detection;
 pub mod links;
 pub mod openable_file_type;
-#[cfg(feature = "local_tty")]
 pub mod path;
 pub mod time_format;
 pub mod tooltips;
