@@ -1054,6 +1054,9 @@ pub struct AgentConversationData {
     /// agent executing on a remote worker.
     #[serde(default, skip_serializing_if = "is_false")]
     pub is_remote_child: bool,
+    /// Whether the root task was still optimistic when this conversation was persisted.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub root_task_is_optimistic: Option<bool>,
     /// The server-assigned run identifier (`ai_tasks.id`) for v2 orchestration.
     /// For local agents this arrives via StreamInit; for cloud agents it will
     /// come from SpawnAgentResponse once the local→cloud spawn path is wired.
@@ -1378,6 +1381,7 @@ mod tests {
             orchestration_harness_type: Some("claude".to_string()),
             parent_conversation_id: None,
             is_remote_child: false,
+            root_task_is_optimistic: None,
             run_id: None,
             autoexecute_override: None,
             last_event_sequence: Some(42),
@@ -1414,6 +1418,7 @@ mod tests {
             orchestration_harness_type: None,
             parent_conversation_id: None,
             is_remote_child: true,
+            root_task_is_optimistic: None,
             run_id: None,
             autoexecute_override: None,
             last_event_sequence: None,
@@ -1422,6 +1427,30 @@ mod tests {
         let json = serde_json::to_string(&data).expect("serialize");
         let roundtripped: AgentConversationData = serde_json::from_str(&json).expect("deserialize");
         assert!(roundtripped.is_remote_child);
+    }
+
+    #[test]
+    fn agent_conversation_data_roundtrips_optimistic_root_marker() {
+        let data = AgentConversationData {
+            server_conversation_token: None,
+            conversation_usage_metadata: None,
+            reverted_action_ids: None,
+            forked_from_server_conversation_token: None,
+            artifacts_json: None,
+            parent_agent_id: None,
+            agent_name: None,
+            orchestration_harness_type: None,
+            parent_conversation_id: None,
+            is_remote_child: false,
+            root_task_is_optimistic: Some(true),
+            run_id: None,
+            autoexecute_override: None,
+            last_event_sequence: None,
+            pinned: false,
+        };
+        let json = serde_json::to_string(&data).expect("serialize");
+        let roundtripped: AgentConversationData = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(roundtripped.root_task_is_optimistic, Some(true));
     }
 
     #[test]
@@ -1449,6 +1478,7 @@ mod tests {
             orchestration_harness_type: None,
             parent_conversation_id: None,
             is_remote_child: false,
+            root_task_is_optimistic: None,
             run_id: None,
             autoexecute_override: None,
             last_event_sequence: None,
@@ -1474,6 +1504,7 @@ mod tests {
             orchestration_harness_type: None,
             parent_conversation_id: None,
             is_remote_child: false,
+            root_task_is_optimistic: None,
             run_id: None,
             autoexecute_override: None,
             last_event_sequence: None,
@@ -1497,6 +1528,7 @@ mod tests {
             orchestration_harness_type: None,
             parent_conversation_id: None,
             is_remote_child: false,
+            root_task_is_optimistic: None,
             run_id: None,
             autoexecute_override: None,
             last_event_sequence: None,
