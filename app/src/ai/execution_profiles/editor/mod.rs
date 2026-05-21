@@ -477,19 +477,19 @@ impl ExecutionProfileEditorView {
             dropdown.set_items(
                 vec![
                     DropdownItem::new(
-                        "Never",
+                        warp_i18n::t!("settings-ai-never"),
                         ExecutionProfileEditorViewAction::SetRunAgents {
                             permission: RunAgentsPermission::NeverAllow,
                         },
                     ),
                     DropdownItem::new(
-                        "Always allow",
+                        warp_i18n::t!("settings-ai-always-allow"),
                         ExecutionProfileEditorViewAction::SetRunAgents {
                             permission: RunAgentsPermission::AlwaysAllow,
                         },
                     ),
                     DropdownItem::new(
-                        "Always ask",
+                        warp_i18n::t!("settings-ai-always-ask"),
                         ExecutionProfileEditorViewAction::SetRunAgents {
                             permission: RunAgentsPermission::AlwaysAsk,
                         },

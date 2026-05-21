@@ -191,18 +191,18 @@ pub enum RunAgentsPermission {
 }
 
 impl RunAgentsPermission {
-    pub fn description(&self) -> &'static str {
+    pub fn description(&self) -> String {
         match self {
             RunAgentsPermission::NeverAllow => {
-                "The Agent cannot run child agents and the run_agents tool will not be available."
+                warp_i18n::t!("settings-ai-run-agents-never-desc")
             }
             RunAgentsPermission::AlwaysAllow => {
-                "Give the Agent full autonomy to run child agents without approval."
+                warp_i18n::t!("settings-ai-run-agents-always-allow-desc")
             }
             RunAgentsPermission::AlwaysAsk => {
-                "Require explicit approval before the Agent runs child agents."
+                warp_i18n::t!("settings-ai-run-agents-always-ask-desc")
             }
-            RunAgentsPermission::Unknown => "Unknown setting.",
+            RunAgentsPermission::Unknown => warp_i18n::t!("settings-ai-unknown-setting"),
         }
     }
 
