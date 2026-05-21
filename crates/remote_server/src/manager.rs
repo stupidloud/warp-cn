@@ -572,7 +572,7 @@ impl RemoteServerManager {
     }
 
     /// Returns a stable display label for a tracked remote host.
-    pub fn host_label(&self, host_id: &HostId) -> Option<&str> {
+    pub fn host_label<'a>(&self, host_id: &'a HostId) -> Option<&'a str> {
         self.host_to_sessions
             .contains_key(host_id)
             .then_some(host_id.as_str())
