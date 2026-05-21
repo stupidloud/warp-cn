@@ -1127,7 +1127,7 @@ impl ServerModel {
                     // Git repo found. Full indexing was already triggered by
                     // DetectedGitRepo → LocalRepoMetadataModel. The client
                     // waits for RepositoryIndexedPush before FetchFileTree.
-                    let root_str = root.to_string_lossy().to_string();
+                    let root_str = root.display_path();
                     log::info!("Git repo detected at {root_str} for path {}", std_path);
                     (root_str, true)
                 } else {

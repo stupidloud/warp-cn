@@ -125,6 +125,24 @@ impl From<PathBuf> for LocalOrRemotePath {
     }
 }
 
+impl From<&Path> for LocalOrRemotePath {
+    fn from(path: &Path) -> Self {
+        LocalOrRemotePath::Local(path.to_path_buf())
+    }
+}
+
+impl From<&PathBuf> for LocalOrRemotePath {
+    fn from(path: &PathBuf) -> Self {
+        LocalOrRemotePath::Local(path.clone())
+    }
+}
+
+impl From<&LocalOrRemotePath> for LocalOrRemotePath {
+    fn from(path: &LocalOrRemotePath) -> Self {
+        path.clone()
+    }
+}
+
 impl From<RemotePath> for LocalOrRemotePath {
     fn from(remote: RemotePath) -> Self {
         LocalOrRemotePath::Remote(remote)

@@ -20,3 +20,10 @@ impl RemotePath {
         Self { host_id, path }
     }
 }
+
+/// Result of asking a remote server to normalize/navigate to a directory.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RemoteNavigationResult {
+    pub remote_path: RemotePath,
+    pub is_git: bool,
+}

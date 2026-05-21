@@ -59,7 +59,21 @@ impl DetectedRepositories {
     /// This design avoids a circular dependency between `repo_metadata` and
     /// `remote_server` — the caller in `app/` constructs the remote future
     /// and injects it here.
-    pub fn detect_possible_git_repo<
+    pub fn detect_possible_git_repo(
+        &mut self,
+        active_directory: &str,
+        source: RepoDetectionSource,
+        ctx: &mut ModelContext<Self>,
+    ) -> impl Future<Output = Option<LocalOrRemotePath>> {
+        self.detect_possible_git_repo_with_remote(
+            active_directory,
+            source,
+            Option::<futures::future::Ready<Option<RemoteNavigationResult>>>::None,
+            ctx,
+        )
+    }
+
+    pub fn detect_possible_git_repo_with_remote<
         F: Future<Output = Option<RemoteNavigationResult>> + 'static,
     >(
         &mut self,
@@ -221,13 +235,19 @@ impl DetectedRepositories {
     /// Given a local or remote path, return its corresponding repo root.
     /// This does not run the check against the actual file system.
     /// Instead it checks against our cached path to root mapping.
-    pub fn get_root_for_path(&self, path: &LocalOrRemotePath) -> Option<LocalOrRemotePath> {
+    pub fn get_root_for_path<P>(&self, path: P) -> Option<LocalOrRemotePath>
+    where
+        P: Into<LocalOrRemotePath>,
+    {
+        let path = path.into();
         match path {
-            LocalOrRemotePath::Local(local_path) => {
+            LocalOrRemotePath::Local(ref local_path) => {
                 let std_path = StandardizedPath::from_local_canonicalized(local_path).ok()?;
                 self.find_local_repository_root(&std_path)
             }
-            LocalOrRemotePath::Remote(remote_path) => self.find_remote_repository_root(remote_path),
+            LocalOrRemotePath::Remote(ref remote_path) => {
+                self.find_remote_repository_root(remote_path)
+            }
         }
     }
 
