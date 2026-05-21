@@ -6390,7 +6390,6 @@ impl SettingsWidget for CloudAgentComputerUseWidget {
                 warp_i18n::t!("settings-ai-cloud-computer-use-desc"),
                 !is_disabled,
                 app,
-            ));
             ))
             .finish()
     }
