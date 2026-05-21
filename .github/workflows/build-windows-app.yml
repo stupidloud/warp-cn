@@ -24,6 +24,9 @@ env:
   WARP_BUILD_CHANNEL: oss
   TARGET: x86_64-pc-windows-msvc
   WIN_ARCH: x64
+  RUSTC_WRAPPER: sccache
+  SCCACHE_GHA_ENABLED: "true"
+  SCCACHE_CACHE_SIZE: "8G"
 
 jobs:
   build:
@@ -47,6 +50,9 @@ jobs:
         with:
           toolchain: stable
           target: ${{ env.TARGET }}
+
+      - name: 配置 sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
 
       - name: 安装 cargo-about
         run: cargo install --locked cargo-about@0.8.4
@@ -77,18 +83,12 @@ jobs:
           restore-keys: |
             rust-deps-win-
 
-      - name: 缓存 target 目录
-        uses: actions/cache@v4
-        with:
-          path: target/x86_64-pc-windows-msvc/
-          key: warp-build-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            warp-build-${{ runner.os }}-
-
       - name: 构建 Windows 安装器
         id: bundle
         shell: pwsh
         run: |
+          sccache --start-server
+
           $bundleArgs = @{
             CHANNEL = "${{ env.WARP_BUILD_CHANNEL }}"
             ARCH = "${{ env.WIN_ARCH }}"
@@ -107,6 +107,12 @@ jobs:
           if (-not $env:GITHUB_OUTPUT) {
             throw "GITHUB_OUTPUT is not set"
           }
+
+      - name: 输出 sccache 统计
+        if: always()
+        shell: pwsh
+        run: |
+          sccache --show-stats
 
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
