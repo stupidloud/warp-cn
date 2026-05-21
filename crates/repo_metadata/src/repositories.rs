@@ -232,6 +232,15 @@ impl DetectedRepositories {
         DirectoryWatcher::as_ref(ctx).get_watched_directory_for_path(local_path)
     }
 
+    /// Backwards-compatible local-path lookup for callers that predate remote-aware repository roots.
+    pub fn get_watched_repo_for_path(
+        &self,
+        path: &Path,
+        ctx: &AppContext,
+    ) -> Option<ModelHandle<Repository>> {
+        self.get_local_watched_repo_for_path(path, ctx)
+    }
+
     /// Given a local or remote path, return its corresponding repo root.
     /// This does not run the check against the actual file system.
     /// Instead it checks against our cached path to root mapping.
