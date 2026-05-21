@@ -1405,7 +1405,7 @@ impl LocalCodeEditorView {
             Some(workspace_root.to_path_buf())
         } else {
             match DetectedRepositories::as_ref(ctx).get_root_for_path(path) {
-                Some(root) => Some(root),
+                Some(root) => root.to_local_path().map(Path::to_path_buf),
                 None => path.parent().map(|s| s.to_path_buf()), // If we can't find root, treat the parent as the root.
             }
         };
@@ -1443,7 +1443,7 @@ impl LocalCodeEditorView {
             Some(workspace_root.to_path_buf())
         } else {
             match DetectedRepositories::as_ref(ctx).get_root_for_path(&path) {
-                Some(root) => Some(root),
+                Some(root) => root.to_local_path().map(Path::to_path_buf),
                 None => path.parent().map(|s| s.to_path_buf()),
             }
         };

@@ -2988,6 +2988,12 @@ impl TerminalView {
         self.current_repo_path.as_ref()
     }
 
+    fn current_repo_location(&self) -> Option<LocalOrRemotePath> {
+        self.current_repo_path
+            .clone()
+            .map(LocalOrRemotePath::Local)
+    }
+
     fn is_nested_cloud_mode(&self, app: &AppContext) -> bool {
         if !self.is_ambient_agent_session(app) {
             return false;
@@ -6283,7 +6289,7 @@ impl TerminalView {
         ctx: &mut ViewContext<Self>,
     ) {
         let arg = CodeReviewPanelArg {
-            repo_path: self.current_repo_path.clone(),
+            repo_path: self.current_repo_location(),
             terminal_view: self.view_handle.clone(),
             entrypoint,
             focus_new_pane,
@@ -6300,9 +6306,9 @@ impl TerminalView {
                 // The diff chip only appears when the remote shell reports changes,
                 // so the user intent is clear.
                 if self
-                    .current_repo_path
+                    .current_repo_location()
                     .as_ref()
-                    .is_some_and(|p| p.is_remote())
+                    .is_some_and(LocalOrRemotePath::is_remote)
                 {
                     ctx.emit(event_constructor(arg));
                 } else {
@@ -11732,7 +11738,9 @@ impl TerminalView {
                             ctx.spawn(fut, move |me, repo_path_opt, ctx| {
                                     let old_repo_path = me.current_repo_path.clone();
                                     // Update the current repo path
-                                    me.current_repo_path = repo_path_opt.clone();
+                                    me.current_repo_path = repo_path_opt
+                                        .as_ref()
+                                        .and_then(|path| path.to_local_path().map(Path::to_path_buf));
 
                                     // Notify the pane group that the detected repo
                                     // changed so the code review panel can
@@ -11751,7 +11759,7 @@ impl TerminalView {
                                         return;
                                     };
 
-                                    if let Some(repo_path) = &repo_path_opt {
+                                    if let Some(repo_path) = me.current_repo_path.clone() {
                                         let Ok(active_directory) = repo_metadata::CanonicalizedPath::try_from(active_directory) else {
                                             return;
                                         };
@@ -11768,7 +11776,7 @@ impl TerminalView {
 
                                         // Subscribe to GitRepoStatusModel if the repo changed
                                         // and git status updates are needed.
-                                        if old_repo_path.as_ref() != Some(repo_path) {
+                                        if old_repo_path.as_ref() != Some(&repo_path) {
                                             // Drop old handle (unsubscribes automatically).
                                             me.git_repo_status = None;
                                             me.update_git_status_subscription(ctx);
@@ -19651,7 +19659,7 @@ impl TerminalView {
 
     fn imported_comments_panel_arg(&self) -> CodeReviewPanelArg {
         CodeReviewPanelArg {
-            repo_path: self.current_repo_path.clone(),
+            repo_path: self.current_repo_location(),
             terminal_view: self.view_handle.clone(),
             entrypoint: CodeReviewPaneEntrypoint::AgentModeRunning,
             focus_new_pane: true,
@@ -20797,7 +20805,7 @@ impl TerminalView {
             }
             InputEvent::OpenCodeReviewPane => {
                 ctx.emit(Event::OpenCodeReviewPane(CodeReviewPanelArg {
-                    repo_path: self.current_repo_path.clone(),
+                    repo_path: self.current_repo_location(),
                     terminal_view: self.view_handle.clone(),
                     entrypoint: CodeReviewPaneEntrypoint::GitDiffChip,
                     focus_new_pane: true,
@@ -26105,7 +26113,7 @@ impl TypedActionView for TerminalView {
             }
             ToggleCodeReviewPane { entrypoint } => {
                 ctx.emit(Event::ToggleCodeReviewPane(CodeReviewPanelArg {
-                    repo_path: self.current_repo_path.clone(),
+                    repo_path: self.current_repo_location(),
                     terminal_view: self.view_handle.clone(),
                     entrypoint: *entrypoint,
                     focus_new_pane: true,

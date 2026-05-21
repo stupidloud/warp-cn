@@ -8,7 +8,7 @@ use warpui::{
 use crate::{
     tab_configs::PickerStyle,
     util::git::{
-        detect_current_branch, get_all_branches, get_all_branches_with_known_main,
+        detect_current_branch, get_all_branches, get_all_branches_with_known_main, BranchEntry,
         sort_branches_main_first,
     },
     view_components::{DropdownItem, FilterableDropdown},
@@ -154,7 +154,10 @@ impl BranchPicker {
                         if let Ok(current) = detect_current_branch(&cwd).await {
                             let trimmed = current.trim().to_string();
                             if !trimmed.is_empty() {
-                                return Ok(vec![(trimmed, true)]);
+                                return Ok(vec![BranchEntry {
+                                    name: trimmed,
+                                    is_main: true,
+                                }]);
                             }
                         }
                         branches

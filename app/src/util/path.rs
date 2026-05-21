@@ -10,9 +10,9 @@ use std::{
 use is_executable::IsExecutable as _;
 #[cfg(not(target_family = "wasm"))]
 use itertools::Itertools as _;
-use warp_util::local_or_remote_path::LocalOrRemotePath;
 use warpui::{AppContext, SingletonEntity};
 
+use crate::code::buffer_location::LocalOrRemotePath;
 use crate::remote_server::manager::RemoteServerManager;
 
 /// Fallback label used when a `RemotePath`'s host is not currently tracked.

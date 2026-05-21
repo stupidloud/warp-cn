@@ -112,7 +112,8 @@ fn snapshot_last_opened(app: &AppContext) -> HashMap<String, instant::Instant> {
         .and_then(|window_id| ActiveSession::as_ref(app).path_if_local(window_id))
         .and_then(|current_dir| {
             DetectedRepositories::as_ref(app).get_root_for_path(Path::new(current_dir))
-        });
+        })
+        .and_then(|root| root.to_local_path().map(Path::to_path_buf));
 
     let Some(repo_path) = git_repo_path else {
         return HashMap::new();

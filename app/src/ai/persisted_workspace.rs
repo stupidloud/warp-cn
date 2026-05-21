@@ -658,7 +658,9 @@ impl PersistedWorkspace {
 
             if auto_indexing_enabled {
                 if let Some(root) = DetectedRepositories::as_ref(ctx).get_root_for_path(&dir) {
-                    manager.index_directory(root, ctx);
+                    if let Some(root) = root.to_local_path() {
+                        manager.index_directory(root.to_path_buf(), ctx);
+                    }
                 }
             }
         }

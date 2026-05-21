@@ -119,7 +119,8 @@ impl CodeSymbolCache {
             .and_then(|window_id| ActiveSession::as_ref(app).path_if_local(window_id))
             .and_then(|current_dir| {
                 DetectedRepositories::as_ref(app).get_root_for_path(Path::new(current_dir))
-            })?;
+            })
+            .and_then(|root| root.to_local_path().map(Path::to_path_buf))?;
 
         let (outline_status, _) = RepoOutlines::as_ref(app).get_outline(&git_repo_path)?;
         let outline = match outline_status {
@@ -200,6 +201,7 @@ impl CodeSymbolCache {
             .and_then(|current_dir| {
                 DetectedRepositories::as_ref(app).get_root_for_path(Path::new(current_dir))
             })
+            .and_then(|root| root.to_local_path().map(Path::to_path_buf))
         else {
             return HashSet::new();
         };

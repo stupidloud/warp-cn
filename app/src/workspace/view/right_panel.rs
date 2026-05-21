@@ -1362,7 +1362,10 @@ impl RightPanelView {
     ) -> ReviewTerminalStatus {
         tv.read(ctx, |t, ctx| {
             let active_session_path = t.active_session_path_if_local(ctx);
-            let current_repo_path = t.current_repo_path().cloned();
+            let current_repo_path = t
+                .current_repo_path()
+                .cloned()
+                .map(LocalOrRemotePath::Local);
             let active_cli_agent = t.active_cli_agent(ctx).map(|agent| format!("{agent:?}"));
             let model = t.model.lock();
             let is_executing = model.block_list().active_block().is_executing();
@@ -1370,7 +1373,7 @@ impl RightPanelView {
             let mut unavailable_reasons = Vec::new();
 
             match repo_path {
-                Some(repo_path) => match (repo_path, t.current_repo_path()) {
+                Some(repo_path) => match (repo_path, current_repo_path.as_ref()) {
                     (LocalOrRemotePath::Local(repo_path), _) => {
                         match active_session_path.as_ref() {
                             Some(cwd)

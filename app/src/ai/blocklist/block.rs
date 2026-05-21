@@ -4559,7 +4559,9 @@ impl AIBlock {
         let raw_count = comments.len();
         let pending = convert_insert_review_comments(comments);
         let converted_count = pending.len();
-        let flattened = attach_pending_imported_comments(pending, &repo_location);
+        let comment_repo_location =
+            crate::code::buffer_location::LocalOrRemotePath::from(&repo_location);
+        let flattened = attach_pending_imported_comments(pending, &comment_repo_location);
         let thread_count = flattened.len();
 
         if !self.model.is_restored() {
@@ -4576,7 +4578,14 @@ impl AIBlock {
         let cards: Vec<CommentViewCard> = flattened
             .into_iter()
             .map(|comment| {
-                CommentViewCard::new(comment, true, true, None, Some(&repo_location), ctx)
+                CommentViewCard::new(
+                    comment,
+                    true,
+                    true,
+                    None,
+                    Some(&comment_repo_location),
+                    ctx,
+                )
             })
             .collect();
 
@@ -5614,8 +5623,9 @@ impl AIBlock {
         ctx: &mut ViewContext<Self>,
     ) {
         #[cfg(not(target_family = "wasm"))]
-        let repo_path =
-            cwd_location.and_then(|cwd| DetectedRepositories::as_ref(ctx).get_root_for_path(cwd));
+        let repo_path = cwd_location
+            .and_then(|cwd| DetectedRepositories::as_ref(ctx).get_root_for_path(cwd.to_warp_util_path()))
+            .map(crate::code::buffer_location::LocalOrRemotePath::from);
         #[cfg(target_family = "wasm")]
         let repo_path = cwd_location.cloned();
 

@@ -65,6 +65,21 @@ impl LocalOrRemotePath {
         }
     }
 
+    /// Compatibility helper for local-only call sites. For remote paths, this
+    /// returns a best-effort host path component.
+    pub fn as_path(&self) -> &Path {
+        match self {
+            LocalOrRemotePath::Local(path) => path.as_path(),
+            LocalOrRemotePath::Remote(remote) => Path::new(remote.path.as_str()),
+        }
+    }
+
+    /// Compatibility helper mirroring `Path::to_string_lossy` for code that
+    /// only needs a displayable path string.
+    pub fn to_string_lossy(&self) -> String {
+        self.display_path()
+    }
+
     /// Joins a (typically repo-relative) segment onto this location, preserving
     /// the host.
     ///
@@ -140,6 +155,12 @@ impl From<&PathBuf> for LocalOrRemotePath {
 impl From<&LocalOrRemotePath> for LocalOrRemotePath {
     fn from(path: &LocalOrRemotePath) -> Self {
         path.clone()
+    }
+}
+
+impl AsRef<Path> for LocalOrRemotePath {
+    fn as_ref(&self) -> &Path {
+        self.as_path()
     }
 }
 

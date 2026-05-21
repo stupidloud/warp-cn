@@ -520,6 +520,7 @@ impl WorkingDirectoriesModel {
         let root_for_path = |path: PathBuf| {
             DetectedRepositories::as_ref(ctx)
                 .get_root_for_path(&path)
+                .and_then(|root| root.to_local_path().map(Path::to_path_buf))
                 .unwrap_or(path)
         };
 
@@ -602,8 +603,9 @@ impl WorkingDirectoriesModel {
         for (terminal_id, remote_path) in &remote_terminal_cwds {
             let remote_key = LocalOrRemotePath::Remote(remote_path.clone());
             if let Some(repo_root) =
-                DetectedRepositories::as_ref(ctx).get_root_for_path(&remote_key)
+                DetectedRepositories::as_ref(ctx).get_root_for_path(remote_key.to_warp_util_path())
             {
+                let repo_root = LocalOrRemotePath::from(repo_root);
                 new_root_to_terminal.insert(repo_root.clone(), *terminal_id);
                 new_remote_repo_roots.push(repo_root);
             } else {
@@ -621,8 +623,9 @@ impl WorkingDirectoriesModel {
             for (dir, terminal_id) in &new_root_to_terminal {
                 if *terminal_id == focused_id {
                     if let Some(repo_root) =
-                        DetectedRepositories::as_ref(ctx).get_root_for_path(dir)
+                        DetectedRepositories::as_ref(ctx).get_root_for_path(dir.to_warp_util_path())
                     {
+                        let repo_root = LocalOrRemotePath::from(repo_root);
                         repos_to_insert.push((repo_root.clone(), focused_id));
                         focused_repo = Some(repo_root);
                     }
@@ -727,7 +730,9 @@ impl WorkingDirectoriesModel {
 
     /// Get the repository root for a given path.
     fn get_repo_root_for_path(&self, path: &Path, ctx: &AppContext) -> Option<PathBuf> {
-        DetectedRepositories::as_ref(ctx).get_root_for_path(path)
+        DetectedRepositories::as_ref(ctx)
+            .get_root_for_path(path)
+            .and_then(|root| root.to_local_path().map(Path::to_path_buf))
     }
 
     /// Emit a DirectoriesChanged event with the current state for a specific pane group.

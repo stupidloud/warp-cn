@@ -80,7 +80,9 @@ impl FileBasedMCPManager {
         cwd: &Path,
         app: &AppContext,
     ) -> Vec<&TemplatableMCPServerInstallation> {
-        let repo_root = DetectedRepositories::as_ref(app).get_root_for_path(cwd);
+        let repo_root = DetectedRepositories::as_ref(app)
+            .get_root_for_path(cwd)
+            .and_then(|root| root.to_local_path().map(Path::to_path_buf));
         let candidate_roots = [dirs::home_dir(), repo_root];
 
         let mut servers = Vec::new();

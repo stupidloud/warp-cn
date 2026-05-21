@@ -700,6 +700,7 @@ impl CodeFooterView {
         let repo_root = DetectedRepositories::handle(ctx)
             .as_ref(ctx)
             .get_root_for_path(file_path)
+            .and_then(|root| root.to_local_path().map(std::path::Path::to_path_buf))
             .or_else(|| file_path.parent().map(|p| p.to_path_buf()));
 
         let Some(repo_root) = repo_root else {

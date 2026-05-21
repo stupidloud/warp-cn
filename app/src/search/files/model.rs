@@ -89,7 +89,9 @@ impl FileSearchModel {
         let current_dir = active_window_id
             .and_then(|window_id| ActiveSession::as_ref(app).path_if_local(window_id))?;
 
-        DetectedRepositories::as_ref(app).get_root_for_path(current_dir)
+        DetectedRepositories::as_ref(app)
+            .get_root_for_path(current_dir)
+            .and_then(|root| root.to_local_path().map(Path::to_path_buf))
     }
 
     #[cfg(not(feature = "local_fs"))]

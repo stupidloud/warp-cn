@@ -321,7 +321,8 @@ fn resolve_unqualified(
     let repo_root = repo_metadata::repositories::DetectedRepositories::as_ref(ctx)
         .get_root_for_path(working_dir);
 
-    if let Some(repo_root) = repo_root {
+    if let Some(repo_root) = repo_root.and_then(|root| root.to_local_path().map(Path::to_path_buf))
+    {
         match resolve_in_single_repo_root(spec, &repo_root, skill_manager) {
             Ok(resolved) => return Ok(resolved),
             Err(ResolveSkillError::NotFound { .. }) => {}

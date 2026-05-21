@@ -571,6 +571,24 @@ impl RemoteServerManager {
             .find_map(|session_id| self.client_for_session(*session_id))
     }
 
+    /// Returns a stable display label for a tracked remote host.
+    pub fn host_label(&self, host_id: &HostId) -> Option<&str> {
+        self.host_to_sessions
+            .contains_key(host_id)
+            .then_some(host_id.as_str())
+    }
+
+    /// Returns one currently connected session for a host.
+    pub fn find_connected_session(&self, host_id: &HostId) -> Option<SessionId> {
+        self.host_to_sessions.get(host_id)?.iter().find_map(|session_id| {
+            matches!(
+                self.sessions.get(session_id),
+                Some(RemoteSessionState::Connected { .. })
+            )
+            .then_some(*session_id)
+        })
+    }
+
     /// Checks if the remote server binary is installed and executable.
     /// Emits `BinaryCheckComplete { result }`.
     ///

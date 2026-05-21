@@ -1296,8 +1296,10 @@ impl FileTreeView {
             {
                 let repo_entry = {
                     let repo_metadata = RepoMetadataModel::as_ref(ctx);
-                    let Some(id) = repo_metadata::RepositoryIdentifier::try_local(&repo_root)
-                    else {
+                    let Some(repo_root) = repo_root.to_local_path() else {
+                        continue;
+                    };
+                    let Some(id) = repo_metadata::RepositoryIdentifier::try_local(repo_root) else {
                         continue;
                     };
                     match repo_metadata.repository_state(&id, ctx) {

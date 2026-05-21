@@ -409,6 +409,7 @@ impl InitProjectModel {
         #[cfg(not(target_family = "wasm"))]
         let repo_root = DetectedRepositories::as_ref(ctx)
             .get_root_for_path(&pwd_path)
+            .and_then(|root| root.to_local_path().map(Path::to_path_buf))
             .unwrap_or_else(|| pwd_path.clone());
         #[cfg(target_family = "wasm")]
         let repo_root = pwd_path.clone();

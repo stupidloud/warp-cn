@@ -2843,6 +2843,20 @@ pub enum TelemetryEvent {
         remote_os: Option<String>,
         remote_arch: Option<String>,
     },
+    /// Emitted before trying to reconnect a dropped remote server connection.
+    RemoteServerReconnection {
+        attempt: u32,
+        remote_os: Option<String>,
+        remote_arch: Option<String>,
+    },
+    /// Emitted when all remote server reconnect attempts have failed.
+    RemoteServerReconnectExhausted {
+        attempts: u32,
+        remote_os: Option<String>,
+        remote_arch: Option<String>,
+        exit_code: Option<i32>,
+        signal_killed: Option<bool>,
+    },
     /// Emitted when a client request to the remote server fails.
     RemoteServerClientRequestError {
         operation: remote_server::manager::RemoteServerOperation,
@@ -5123,6 +5137,8 @@ impl TelemetryEvent {
             | TelemetryEvent::RemoteServerInstallation { .. }
             | TelemetryEvent::RemoteServerInitialization { .. }
             | TelemetryEvent::RemoteServerDisconnection { .. }
+            | TelemetryEvent::RemoteServerReconnection { .. }
+            | TelemetryEvent::RemoteServerReconnectExhausted { .. }
             | TelemetryEvent::RemoteServerClientRequestError { .. }
             | TelemetryEvent::RemoteServerMessageDecodingError { .. }
             | TelemetryEvent::RemoteServerSetupDuration { .. }
@@ -5692,6 +5708,8 @@ impl TelemetryEventDesc for TelemetryEventDiscriminants {
             | Self::RemoteServerInstallation
             | Self::RemoteServerInitialization
             | Self::RemoteServerDisconnection
+            | Self::RemoteServerReconnection
+            | Self::RemoteServerReconnectExhausted
             | Self::RemoteServerClientRequestError
             | Self::RemoteServerMessageDecodingError
             | Self::RemoteServerSetupDuration
@@ -6101,6 +6119,8 @@ impl TelemetryEventDesc for TelemetryEventDiscriminants {
             Self::RemoteServerInstallation => "RemoteServer.Installation",
             Self::RemoteServerInitialization => "RemoteServer.Initialization",
             Self::RemoteServerDisconnection => "RemoteServer.Disconnection",
+            Self::RemoteServerReconnection => "RemoteServer.Reconnection",
+            Self::RemoteServerReconnectExhausted => "RemoteServer.ReconnectExhausted",
             Self::RemoteServerClientRequestError => "RemoteServer.ClientRequestError",
             Self::RemoteServerMessageDecodingError => "RemoteServer.MessageDecodingError",
             Self::RemoteServerSetupDuration => "RemoteServer.SetupDuration",
@@ -7143,6 +7163,12 @@ impl TelemetryEventDesc for TelemetryEventDiscriminants {
             }
             Self::RemoteServerDisconnection => {
                 "An established remote server connection was dropped"
+            }
+            Self::RemoteServerReconnection => {
+                "A remote server reconnection attempt started"
+            }
+            Self::RemoteServerReconnectExhausted => {
+                "Remote server reconnection attempts were exhausted"
             }
             Self::RemoteServerClientRequestError => {
                 "A client request to the remote server failed"

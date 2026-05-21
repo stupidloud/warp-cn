@@ -10453,7 +10453,9 @@ impl Input {
                                         // Find git repo and construct absolute path
                                         use repo_metadata::repositories::DetectedRepositories;
                                         let git_repo_path = DetectedRepositories::as_ref(ctx)
-                                            .get_root_for_path(Path::new(pwd))?;
+                                            .get_root_for_path(Path::new(pwd))?
+                                            .to_local_path()
+                                            .map(Path::to_path_buf)?;
                                         let absolute_path = git_repo_path.join(file_path);
 
                                         // Try to get relative path if it's shorter

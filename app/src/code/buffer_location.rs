@@ -91,6 +91,17 @@ impl LocalOrRemotePath {
             _ => None,
         }
     }
+
+    pub fn to_warp_util_path(&self) -> warp_util::local_or_remote_path::LocalOrRemotePath {
+        match self {
+            LocalOrRemotePath::Local(path) => {
+                warp_util::local_or_remote_path::LocalOrRemotePath::Local(path.clone())
+            }
+            LocalOrRemotePath::Remote(remote) => {
+                warp_util::local_or_remote_path::LocalOrRemotePath::Remote(remote.clone())
+            }
+        }
+    }
 }
 
 impl From<PathBuf> for LocalOrRemotePath {
@@ -114,6 +125,32 @@ impl From<&PathBuf> for LocalOrRemotePath {
 impl From<&LocalOrRemotePath> for LocalOrRemotePath {
     fn from(path: &LocalOrRemotePath) -> Self {
         path.clone()
+    }
+}
+
+impl From<warp_util::local_or_remote_path::LocalOrRemotePath> for LocalOrRemotePath {
+    fn from(path: warp_util::local_or_remote_path::LocalOrRemotePath) -> Self {
+        match path {
+            warp_util::local_or_remote_path::LocalOrRemotePath::Local(path) => {
+                LocalOrRemotePath::Local(path)
+            }
+            warp_util::local_or_remote_path::LocalOrRemotePath::Remote(remote) => {
+                LocalOrRemotePath::Remote(remote)
+            }
+        }
+    }
+}
+
+impl From<&warp_util::local_or_remote_path::LocalOrRemotePath> for LocalOrRemotePath {
+    fn from(path: &warp_util::local_or_remote_path::LocalOrRemotePath) -> Self {
+        match path {
+            warp_util::local_or_remote_path::LocalOrRemotePath::Local(path) => {
+                LocalOrRemotePath::Local(path.clone())
+            }
+            warp_util::local_or_remote_path::LocalOrRemotePath::Remote(remote) => {
+                LocalOrRemotePath::Remote(remote.clone())
+            }
+        }
     }
 }
 

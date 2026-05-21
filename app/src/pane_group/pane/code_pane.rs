@@ -145,9 +145,15 @@ impl PaneContent for CodePane {
                         if let Some(repo_path) =
                             DetectedRepositories::as_ref(ctx).get_root_for_path(file_path)
                         {
-                            OpenedFilesModel::handle(ctx).update(ctx, |opened_files, ctx| {
-                                opened_files.file_opened(repo_path, file_path.clone(), ctx);
-                            });
+                            if let Some(repo_path) = repo_path.to_local_path() {
+                                OpenedFilesModel::handle(ctx).update(ctx, |opened_files, ctx| {
+                                    opened_files.file_opened(
+                                        repo_path.to_path_buf(),
+                                        file_path.clone(),
+                                        ctx,
+                                    );
+                                });
+                            }
                         }
                     }
                 }

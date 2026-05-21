@@ -2537,7 +2537,7 @@ impl BillingAndUsagePageView {
 
         let tab_selector = tab_selector::render_tab_selector(
             tabs,
-            self.selected_tab.label(),
+            &self.selected_tab.label(),
             // On click, set clicked tab as selected
             |label, ctx| {
                 ctx.dispatch_typed_action(BillingAndUsagePageAction::SelectTab(
