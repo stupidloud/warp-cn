@@ -5623,9 +5623,8 @@ impl AIBlock {
         ctx: &mut ViewContext<Self>,
     ) {
         #[cfg(not(target_family = "wasm"))]
-        let repo_path = cwd_location
-            .and_then(|cwd| DetectedRepositories::as_ref(ctx).get_root_for_path(cwd.to_warp_util_path()))
-            .map(crate::code::buffer_location::LocalOrRemotePath::from);
+        let repo_path =
+            cwd_location.and_then(|cwd| DetectedRepositories::as_ref(ctx).get_root_for_path(cwd));
         #[cfg(target_family = "wasm")]
         let repo_path = cwd_location.cloned();
 

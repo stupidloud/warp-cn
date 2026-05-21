@@ -915,6 +915,7 @@ impl CodeReviewView {
             .or_else(|| {
                 repo_metadata::repositories::DetectedRepositories::as_ref(ctx)
                     .get_root_for_path(path)
+                    .and_then(|root| root.to_local_path().map(Path::to_path_buf))
             })
             .or_else(|| path.parent().map(|p| p.to_path_buf()));
 
@@ -957,6 +958,7 @@ impl CodeReviewView {
             .or_else(|| {
                 repo_metadata::repositories::DetectedRepositories::as_ref(ctx)
                     .get_root_for_path(path)
+                    .and_then(|root| root.to_local_path().map(Path::to_path_buf))
             })
             .or_else(|| path.parent().map(|p| p.to_path_buf()));
 

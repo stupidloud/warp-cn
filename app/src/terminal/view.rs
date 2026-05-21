@@ -19605,7 +19605,7 @@ impl TerminalView {
                 base_branch,
             } => {
                 let arg = CodeReviewPanelArg {
-                    repo_path: Some(repo_path.clone()),
+                    repo_path: Some(repo_path.clone().into()),
                     terminal_view: self.view_handle.clone(),
                     entrypoint: CodeReviewPaneEntrypoint::AgentModeRunning,
                     focus_new_pane: true,
