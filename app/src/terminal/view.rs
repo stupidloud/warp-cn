@@ -17,6 +17,7 @@ mod init_project;
 use crate::ai::block_context::BlockContext;
 #[cfg(feature = "local_fs")]
 use crate::ai::skills::SkillOpenOrigin;
+use crate::code::buffer_location::LocalOrRemotePath;
 use crate::global_resource_handles::GlobalResourceHandlesProvider;
 pub use init_project::{
     InitActionResult, InitProjectModel, InitProjectModelEvent, InitStepBlock, InitStepKind,

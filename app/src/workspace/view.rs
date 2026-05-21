@@ -8258,7 +8258,11 @@ impl Workspace {
             // Read repo_path and terminal_view from the pane group (immutable context).
             let read_result = active_pane_group.read(ctx, |pane_group, ctx| {
                 pane_group.active_session_view(ctx).map(|terminal_view| {
-                    let repo_path = terminal_view.as_ref(ctx).current_repo_path().cloned();
+                    let repo_path = terminal_view
+                        .as_ref(ctx)
+                        .current_repo_path()
+                        .cloned()
+                        .map(LocalOrRemotePath::Local);
                     (repo_path, terminal_view.downgrade())
                 })
             });
@@ -8413,7 +8417,11 @@ impl Workspace {
         // Read repo_path and terminal_view from pane group (immutable context).
         let read_result = pane_group_handle.read(ctx, |pane_group, ctx| {
             pane_group.active_session_view(ctx).map(|terminal_view| {
-                let repo_path = terminal_view.as_ref(ctx).current_repo_path().cloned();
+                let repo_path = terminal_view
+                    .as_ref(ctx)
+                    .current_repo_path()
+                    .cloned()
+                    .map(LocalOrRemotePath::Local);
                 (repo_path, terminal_view.downgrade())
             })
         });
@@ -21876,8 +21884,11 @@ impl TypedActionView for Workspace {
                         pane_group
                             .terminal_view_from_pane_id(locator.pane_id, ctx)
                             .map(|terminal_view| {
-                                let repo_path =
-                                    terminal_view.as_ref(ctx).current_repo_path().cloned();
+                                let repo_path = terminal_view
+                                    .as_ref(ctx)
+                                    .current_repo_path()
+                                    .cloned()
+                                    .map(LocalOrRemotePath::Local);
                                 (repo_path, terminal_view.downgrade())
                             })
                     });

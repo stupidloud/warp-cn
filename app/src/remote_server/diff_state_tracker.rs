@@ -274,6 +274,10 @@ impl RemoteDiffStateManager {
                     self.add_pending_response(key, request_id.clone(), conn_id);
                     SubscribeOutcome::Async
                 }
+                DiffState::Disconnected => {
+                    self.add_pending_response(key, request_id.clone(), conn_id);
+                    SubscribeOutcome::Async
+                }
             }
         } else {
             // Model doesn't exist — create it and wire up event subscription.

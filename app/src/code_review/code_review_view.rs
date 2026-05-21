@@ -600,7 +600,7 @@ struct PendingPreciseScroll {
 struct RepositoryState {
     repo_path: LocalOrRemotePath,
     state: CodeReviewViewState,
-    available_branches: Vec<(String, bool)>, // (branch_name, is_main_branch)
+    available_branches: Vec<BranchEntry>,
 
     /// Whether a repo-relative file path has been explicitly expanded (true) or collapsed (false).
     file_expanded: HashMap<String, bool>,
@@ -1550,7 +1550,7 @@ impl CodeReviewView {
             let already_present = repo
                 .available_branches
                 .iter()
-                .any(|(name, _)| name == branch_name);
+                .any(|branch| branch.name == *branch_name);
             if !already_present {
                 targets.push(DiffTarget::new(
                     branch_name.clone(),
@@ -1561,10 +1561,10 @@ impl CodeReviewView {
         }
 
         // 3. Main branch, if known.
-        let main_branch = repo.available_branches.iter().find(|(_, is_main)| *is_main);
-        if let Some((main_branch_name, _)) = main_branch {
+        let main_branch = repo.available_branches.iter().find(|branch| branch.is_main);
+        if let Some(main_branch) = main_branch {
             targets.push(DiffTarget::new(
-                main_branch_name.clone(),
+                main_branch.name.clone(),
                 DiffMode::MainBranch,
                 matches!(current_mode, DiffMode::MainBranch),
             ));
@@ -1573,22 +1573,22 @@ impl CodeReviewView {
         // 4. Other branches, filtered to exclude main and the currently
         // checked-out branch (the latter is functionally the same as
         // "Uncommitted changes").
-        for (branch_name, is_main) in repo.available_branches.iter() {
-            if *is_main {
+        for branch in repo.available_branches.iter() {
+            if branch.is_main {
                 continue;
             }
             if let Some(current_name) = &current_branch_name {
-                if branch_name == current_name {
+                if branch.name == *current_name {
                     continue;
                 }
             }
             let is_selected = match &current_mode {
-                DiffMode::OtherBranch(name) => name == branch_name,
+                DiffMode::OtherBranch(name) => *name == branch.name,
                 DiffMode::Head | DiffMode::MainBranch => false,
             };
             targets.push(DiffTarget::new(
-                branch_name.clone(),
-                DiffMode::OtherBranch(branch_name.clone()),
+                branch.name.clone(),
+                DiffMode::OtherBranch(branch.name.clone()),
                 is_selected,
             ));
         }
@@ -2531,6 +2531,15 @@ impl CodeReviewView {
             DiffState::Error(err) => {
                 if let Some(repo) = self.active_repo.as_mut() {
                     repo.state = CodeReviewViewState::Error(err);
+                }
+                ctx.notify();
+                return;
+            }
+            DiffState::Disconnected => {
+                if let Some(repo) = self.active_repo.as_mut() {
+                    repo.state = CodeReviewViewState::Error(
+                        "Remote code review connection disconnected.".to_string(),
+                    );
                 }
                 ctx.notify();
                 return;

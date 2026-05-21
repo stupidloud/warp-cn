@@ -189,6 +189,13 @@ pub struct RepoGitSummary {
     pub lines_removed: u32,
 }
 
+/// A branch entry with whether it is the repository's main branch.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BranchEntry {
+    pub name: String,
+    pub is_main: bool,
+}
+
 /// Runs git commands in `repo_root` to get current branch + diff stats.
 /// Returns None if not a git repo or git is unavailable.
 #[cfg(feature = "local_fs")]
@@ -879,7 +886,7 @@ pub async fn get_all_branches(
     repo_path: &Path,
     max_branch_count: Option<usize>,
     include_remotes: bool,
-) -> Result<Vec<(String, bool)>> {
+) -> Result<Vec<BranchEntry>> {
     let main_branch = match detect_main_branch(repo_path).await {
         Ok(branch) => branch,
         Err(err) => {
@@ -900,7 +907,7 @@ pub async fn get_all_branches_with_known_main(
     main_branch: &str,
     max_branch_count: Option<usize>,
     include_remotes: bool,
-) -> Result<Vec<(String, bool)>> {
+) -> Result<Vec<BranchEntry>> {
     fetch_branch_list_with_main(repo_path, main_branch, max_branch_count, include_remotes).await
 }
 
@@ -912,7 +919,7 @@ async fn fetch_branch_list_with_main(
     main_branch: &str,
     max_branch_count: Option<usize>,
     include_remotes: bool,
-) -> Result<Vec<(String, bool)>> {
+) -> Result<Vec<BranchEntry>> {
     let count_arg = format!("--count={}", max_branch_count.unwrap_or(100));
 
     let mut args = vec![
@@ -945,13 +952,15 @@ async fn fetch_branch_list_with_main(
             continue;
         }
 
-        let is_main = branch == main_branch || branch == main_branch.trim_start_matches("origin/");
-        branches.push((branch.to_string(), is_main));
+        branches.push(BranchEntry {
+            name: branch.to_string(),
+            is_main: branch == main_branch || branch == main_branch.trim_start_matches("origin/"),
+        });
     }
 
     // Remove duplicates while preserving order (most recent first)
     let mut seen = std::collections::HashSet::new();
-    branches.retain(|(name, _)| seen.insert(name.clone()));
+    branches.retain(|branch| seen.insert(branch.name.clone()));
 
     if branches.is_empty() {
         safe_warn!(
@@ -966,12 +975,12 @@ async fn fetch_branch_list_with_main(
 /// Returns an iterator over `branches` with main branches (`is_main == true`) first,
 /// then the rest in their existing order.
 pub fn sort_branches_main_first(
-    branches: &[(String, bool)],
-) -> impl Iterator<Item = &(String, bool)> {
+    branches: &[BranchEntry],
+) -> impl Iterator<Item = &BranchEntry> {
     branches
         .iter()
-        .filter(|(_, is_main)| *is_main)
-        .chain(branches.iter().filter(|(_, is_main)| !is_main))
+        .filter(|branch| branch.is_main)
+        .chain(branches.iter().filter(|branch| !branch.is_main))
 }
 
 /// Represents a parsed unified diff header.

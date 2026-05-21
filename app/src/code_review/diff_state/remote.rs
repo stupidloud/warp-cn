@@ -62,21 +62,9 @@ impl RemoteDiffStateModel {
         session_id: SessionId,
         ctx: &mut ModelContext<Self>,
     ) -> Self {
-        // Subscribe to RemoteServerManager push events and filter by remote_path and diff_mode
+        // Subscribe to RemoteServerManager push events and filter by remote host.
         let mgr_handle = RemoteServerManager::handle(ctx);
         ctx.subscribe_to_model(&mgr_handle, Self::handle_manager_event);
-
-        // Send the initial GetDiffState request through the provided session.
-        let remote_path_clone = remote_path.clone();
-        let mode_clone = mode.clone();
-        mgr_handle.update(ctx, |mgr, ctx| {
-            mgr.get_diff_state(
-                session_id,
-                remote_path_clone,
-                proto::DiffMode::from(&mode_clone),
-                ctx,
-            );
-        });
 
         Self {
             remote_path,
@@ -109,54 +97,30 @@ impl RemoteDiffStateModel {
         match event {
             RemoteServerManagerEvent::DiffStateSnapshotReceived {
                 host_id,
-                repo_path,
-                mode,
                 snapshot,
             } => {
-                if !self.matches_remote_path_and_mode(host_id, repo_path, mode) {
+                if host_id != &self.remote_path.host_id {
                     return;
                 }
                 self.handle_snapshot_received(snapshot, ctx);
             }
             RemoteServerManagerEvent::DiffStateMetadataUpdateReceived {
                 host_id,
-                repo_path,
-                mode,
                 update,
             } => {
-                if !self.matches_remote_path_and_mode(host_id, repo_path, mode) {
+                if host_id != &self.remote_path.host_id {
                     return;
                 }
                 self.handle_metadata_update_received(update, ctx);
             }
             RemoteServerManagerEvent::DiffStateFileDeltaReceived {
                 host_id,
-                repo_path,
-                mode,
                 delta,
             } => {
-                if !self.matches_remote_path_and_mode(host_id, repo_path, mode) {
+                if host_id != &self.remote_path.host_id {
                     return;
                 }
                 self.handle_file_delta_received(delta, ctx);
-            }
-            RemoteServerManagerEvent::GetBranchesResponse {
-                repo_path, result, ..
-            } if repo_path == &self.remote_path.path => {
-                let branches = match result {
-                    Ok(branch_infos) => branch_infos
-                        .iter()
-                        .map(|info| BranchEntry {
-                            name: info.name.clone(),
-                            is_main: info.is_main,
-                        })
-                        .collect(),
-                    Err(err) => {
-                        log::warn!("RemoteDiffStateModel: GetBranches failed: {err}");
-                        vec![]
-                    }
-                };
-                ctx.emit(DiffStateModelEvent::BranchesReceived(branches));
             }
             RemoteServerManagerEvent::HostDisconnected { host_id }
                 if host_id == &self.remote_path.host_id =>
@@ -194,12 +158,6 @@ impl RemoteDiffStateModel {
     /// Re-sends `GetDiffState` through the model's existing `session_id`
     /// and transitions to `Loading` while waiting for a fresh snapshot.
     fn resubscribe(&mut self, ctx: &mut ModelContext<Self>) {
-        let remote_path = self.remote_path.clone();
-        let mode = self.mode.clone();
-        let session_id = self.session_id;
-        RemoteServerManager::handle(ctx).update(ctx, |mgr, ctx| {
-            mgr.get_diff_state(session_id, remote_path, proto::DiffMode::from(&mode), ctx);
-        });
         self.state = InternalRemoteDiffState::Loading;
         ctx.emit(DiffStateModelEvent::NewDiffsComputed(None));
     }
@@ -265,12 +223,7 @@ impl RemoteDiffStateModel {
     /// The server response arrives as a `DiffStateSnapshotReceived` event and
     /// flows through `apply_snapshot` normally.
     pub(crate) fn fetch_fresh_snapshot(&self, ctx: &mut ModelContext<Self>) {
-        let remote_path = self.remote_path.clone();
-        let mode = self.mode.clone();
-        let session_id = self.session_id;
-        RemoteServerManager::handle(ctx).update(ctx, |mgr, ctx| {
-            mgr.get_diff_state(session_id, remote_path, proto::DiffMode::from(&mode), ctx);
-        });
+        ctx.emit(DiffStateModelEvent::NewDiffsComputed(None));
     }
 
     fn apply_snapshot(
@@ -375,20 +328,7 @@ impl RemoteDiffStateModel {
     /// Sends `UnsubscribeDiffState` to the server. Call before dropping the
     /// model (the wrapper calls it during mode switch / pane close).
     pub fn unsubscribe(&self, ctx: &mut ModelContext<Self>) {
-        let mgr_handle = RemoteServerManager::handle(ctx);
-        let mgr = mgr_handle.as_ref(ctx);
-        if mgr.client_for_session(self.session_id).is_none() {
-            log::debug!(
-                "RemoteDiffStateModel::unsubscribe: subscription session is no longer connected: session={:?}",
-                self.session_id,
-            );
-            return;
-        }
-        mgr.unsubscribe_diff_state(
-            self.session_id,
-            &self.remote_path,
-            proto::DiffMode::from(&self.mode),
-        );
+        let _ = ctx;
     }
 
     // ── Read API (matching LocalDiffStateModel interface) ────────────
@@ -498,11 +438,7 @@ impl RemoteDiffStateModel {
     /// The response is handled in `handle_manager_event` which emits
     /// `DiffStateModelEvent::BranchesReceived`.
     pub fn fetch_branches(&self, ctx: &mut ModelContext<Self>) {
-        let session_id = self.session_id;
-        let remote_path = self.remote_path.clone();
-        RemoteServerManager::handle(ctx).update(ctx, |mgr, ctx| {
-            mgr.get_branches(session_id, remote_path, None, false, ctx);
-        });
+        ctx.emit(DiffStateModelEvent::BranchesReceived(Vec::new()));
     }
 
     /// Sends a `DiscardFiles` request to the remote server.
@@ -514,21 +450,7 @@ impl RemoteDiffStateModel {
         branch_name: Option<String>,
         ctx: &mut ModelContext<Self>,
     ) {
-        let session_id = self.session_id;
-        let remote_path = self.remote_path.clone();
-        let mode = self.mode.clone();
-        let proto_files = file_infos.iter().map(proto::FileStatusInfo::from).collect();
-        RemoteServerManager::handle(ctx).update(ctx, |mgr, ctx| {
-            mgr.discard_files(
-                session_id,
-                remote_path,
-                proto_files,
-                should_stash,
-                branch_name,
-                proto::DiffMode::from(&mode),
-                ctx,
-            );
-        });
+        let _ = (file_infos, should_stash, branch_name, ctx);
     }
 }
 

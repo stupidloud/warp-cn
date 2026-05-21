@@ -431,7 +431,7 @@ impl AITip for AgentTip {
         // Tips whose description references a keybinding placeholder should only be shown
         // when the keybinding is actually configured, so we never display the raw
         // "<keybinding>" string to users.
-        if self.description.contains("<keybinding>") && self.keystroke(app).is_none() {
+        if self.description().contains("<keybinding>") && self.keystroke(app).is_none() {
             return false;
         }
         true
@@ -546,7 +546,7 @@ impl AITipModel<AgentTip> {
                 let still_in_pool = self
                     .tips
                     .iter()
-                    .any(|tip| tip.description == current_tip.description);
+                    .any(|tip| tip.description() == current_tip.description());
 
                 !still_in_pool || !current_tip.is_tip_applicable(None, ctx)
             })

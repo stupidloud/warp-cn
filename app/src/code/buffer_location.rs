@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use warp_util::content_version::ContentVersion;
 use warp_util::remote_path::RemotePath;
+use warp_util::standardized_path::StandardizedPath;
 
 /// Uniquely identifies where a file lives — either on the local filesystem
 /// or on a remote host. Used across both the buffer model and the
@@ -16,6 +17,24 @@ pub enum LocalOrRemotePath {
 }
 
 impl LocalOrRemotePath {
+    /// Returns `true` if this is a `Local` location.
+    pub fn is_local(&self) -> bool {
+        matches!(self, LocalOrRemotePath::Local(_))
+    }
+
+    /// Returns `true` if this is a `Remote` location.
+    pub fn is_remote(&self) -> bool {
+        matches!(self, LocalOrRemotePath::Remote(_))
+    }
+
+    /// Returns the standardized path component of the location, regardless of where it lives.
+    pub fn path_component(&self) -> StandardizedPath {
+        match self {
+            LocalOrRemotePath::Local(path) => StandardizedPath::from_local_absolute_unchecked(path),
+            LocalOrRemotePath::Remote(remote) => remote.path.clone(),
+        }
+    }
+
     /// Returns the file name component for display (e.g. tab titles).
     pub fn display_name(&self) -> &str {
         match self {
@@ -24,6 +43,14 @@ impl LocalOrRemotePath {
                 .and_then(|n| n.to_str())
                 .unwrap_or_default(),
             LocalOrRemotePath::Remote(remote) => remote.path.file_name().unwrap_or_default(),
+        }
+    }
+
+    /// Returns a displayable path string.
+    pub fn display_path(&self) -> String {
+        match self {
+            LocalOrRemotePath::Local(path) => path.to_string_lossy().to_string(),
+            LocalOrRemotePath::Remote(remote) => format!("{}", remote.path),
         }
     }
 
@@ -36,6 +63,34 @@ impl LocalOrRemotePath {
             LocalOrRemotePath::Remote(_) => None,
         }
     }
+
+    /// Joins a segment onto this location, preserving the host for remote paths.
+    pub fn join(&self, segment: &str) -> LocalOrRemotePath {
+        match self {
+            LocalOrRemotePath::Local(path) => LocalOrRemotePath::Local(path.join(segment)),
+            LocalOrRemotePath::Remote(remote) => {
+                let joined = remote.path.join(segment);
+                LocalOrRemotePath::Remote(RemotePath::new(remote.host_id.clone(), joined))
+            }
+        }
+    }
+
+    /// If `file` shares this location's host and starts with this location's path,
+    /// returns the relative remainder as a string.
+    pub fn strip_repo_prefix(&self, file: &LocalOrRemotePath) -> Option<String> {
+        match (self, file) {
+            (LocalOrRemotePath::Local(repo), LocalOrRemotePath::Local(file)) => file
+                .strip_prefix(repo)
+                .ok()
+                .map(|path| path.to_string_lossy().into_owned()),
+            (LocalOrRemotePath::Remote(repo), LocalOrRemotePath::Remote(file))
+                if repo.host_id == file.host_id =>
+            {
+                file.path.strip_prefix(&repo.path).map(str::to_owned)
+            }
+            _ => None,
+        }
+    }
 }
 
 impl From<PathBuf> for LocalOrRemotePath {
@@ -44,9 +99,36 @@ impl From<PathBuf> for LocalOrRemotePath {
     }
 }
 
+impl From<&Path> for LocalOrRemotePath {
+    fn from(path: &Path) -> Self {
+        LocalOrRemotePath::Local(path.to_path_buf())
+    }
+}
+
+impl From<&PathBuf> for LocalOrRemotePath {
+    fn from(path: &PathBuf) -> Self {
+        LocalOrRemotePath::Local(path.clone())
+    }
+}
+
+impl From<&LocalOrRemotePath> for LocalOrRemotePath {
+    fn from(path: &LocalOrRemotePath) -> Self {
+        path.clone()
+    }
+}
+
 impl From<RemotePath> for LocalOrRemotePath {
     fn from(remote: RemotePath) -> Self {
         LocalOrRemotePath::Remote(remote)
+    }
+}
+
+impl AsRef<Path> for LocalOrRemotePath {
+    fn as_ref(&self) -> &Path {
+        match self {
+            LocalOrRemotePath::Local(path) => path.as_path(),
+            LocalOrRemotePath::Remote(remote) => Path::new(remote.path.as_str()),
+        }
     }
 }
 

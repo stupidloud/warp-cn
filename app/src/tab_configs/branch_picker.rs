@@ -186,19 +186,19 @@ impl BranchPicker {
                 if me.cached_main_branch.is_none() {
                     me.cached_main_branch = branches
                         .iter()
-                        .find(|(_, is_main)| *is_main)
-                        .map(|(name, _)| name.clone());
+                        .find(|branch| branch.is_main)
+                        .map(|branch| branch.name.clone());
                 }
 
                 // Main branches first, then the rest in recency order.
                 let mut items: Vec<DropdownItem<String>> = sort_branches_main_first(&branches)
-                    .map(|(name, _)| DropdownItem::new(name.clone(), name.clone()))
+                    .map(|branch| DropdownItem::new(branch.name.clone(), branch.name.clone()))
                     .collect();
 
                 // Add the default as the first item if it isn't already in the list
                 // (e.g. the user typed a branch name that doesn't exist locally yet).
                 if let Some(ref default) = me.default_value {
-                    if !branches.iter().any(|(name, _)| name == default) {
+                    if !branches.iter().any(|branch| branch.name == *default) {
                         items.insert(0, DropdownItem::new(default.clone(), default.clone()));
                     }
                 }
