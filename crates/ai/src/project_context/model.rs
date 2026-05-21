@@ -347,7 +347,9 @@ impl ProjectContextModel {
 
         ctx.spawn(fut, move |me, repo_path_opt, ctx| {
             if let Some(path) = repo_path_opt {
-                me.register_watcher_for_path(&path, ctx);
+                if let Some(path) = path.to_local_path() {
+                    me.register_watcher_for_path(path, ctx);
+                }
             }
         });
     }
