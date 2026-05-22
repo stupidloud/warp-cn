@@ -5,6 +5,7 @@ use ai::api_keys::{ApiKeyManager, ApiKeyManagerEvent, CustomEndpoint, CustomEndp
 pub use ai::LLMId;
 use parking_lot::FairMutex;
 use serde::{de, Deserialize, Serialize};
+use anyhow::Context;
 use warp_core::features::FeatureFlag;
 use warp_core::ui::icons::Icon;
 use warp_core::user_preferences::GetUserPreferences;
@@ -1130,22 +1131,14 @@ impl LLMPreferences {
                         }
                     }
                     Some(Err(e)) => {
-                        log::warn!(
-                            "DirectBackend: dynamic catalog fetch failed, falling back to upstream: {e:#}"
+                        report_error!(
+                            e.context("DirectBackend: failed to refresh model catalog")
                         );
-                        if AuthStateProvider::as_ref(ctx).get().is_logged_in() {
-                            me.refresh_authed_models(ctx);
-                        } else {
-                            me.refresh_public_models(ctx);
-                        }
                     }
                     None => {
-                        // No direct provider configured — fall through to upstream.
-                        if AuthStateProvider::as_ref(ctx).get().is_logged_in() {
-                            me.refresh_authed_models(ctx);
-                        } else {
-                            me.refresh_public_models(ctx);
-                        }
+                        log::warn!(
+                            "DirectBackend: model catalog refresh skipped because no provider key is configured"
+                        );
                     }
                 },
             );

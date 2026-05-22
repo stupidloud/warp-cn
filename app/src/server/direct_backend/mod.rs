@@ -85,6 +85,18 @@ pub fn active_backend(ctx: &AppContext) -> Option<Arc<dyn LlmBackend>> {
     instantiate(resolved)
 }
 
+/// Same as [`active_backend`], but resolves from the process-global
+/// `DirectBackendConfig` snapshot. This is used by `ServerApi` methods that do
+/// not have an `AppContext` but still need to avoid the upstream Warp backend in
+/// Direct mode.
+pub fn active_backend_from_snapshot() -> Option<Arc<dyn LlmBackend>> {
+    if !FeatureFlag::DirectLlmBackend.is_enabled() {
+        return None;
+    }
+    let resolved = resolve_from_snapshot().or_else(resolve_from_env)?;
+    instantiate(resolved)
+}
+
 fn instantiate(resolved: ResolvedProvider) -> Option<Arc<dyn LlmBackend>> {
     match resolved.kind {
         DirectProviderKind::OpenAi | DirectProviderKind::OpenAiCompatible => {
@@ -93,6 +105,34 @@ fn instantiate(resolved: ResolvedProvider) -> Option<Arc<dyn LlmBackend>> {
         DirectProviderKind::Anthropic => Some(Arc::new(anthropic::AnthropicBackend::new(resolved))),
         DirectProviderKind::Gemini => Some(Arc::new(gemini::GeminiBackend::new(resolved))),
     }
+}
+
+fn resolve_from_snapshot() -> Option<ResolvedProvider> {
+    let snap = ai::direct_backend::current_snapshot();
+    for kind in [
+        DirectProviderKind::Anthropic,
+        DirectProviderKind::OpenAiCompatible,
+        DirectProviderKind::OpenAi,
+        DirectProviderKind::Gemini,
+    ] {
+        let overrides = match kind {
+            DirectProviderKind::OpenAi => &snap.openai,
+            DirectProviderKind::Anthropic => &snap.anthropic,
+            DirectProviderKind::Gemini => &snap.gemini,
+            DirectProviderKind::OpenAiCompatible => &snap.openai_compatible,
+        };
+        let api_key = overrides.api_key.trim();
+        if api_key.is_empty() {
+            continue;
+        }
+        return Some(ResolvedProvider {
+            kind,
+            api_key: api_key.to_string(),
+            base_url: pick_base_url(kind, overrides),
+            model_id: pick_model_id(kind, overrides),
+        });
+    }
+    None
 }
 
 /// Read provider config from the `WARP_CN_*` env vars. Intended for dev/QA
@@ -153,6 +193,7 @@ fn resolve(config: &DirectBackendConfig, api_keys: &ApiKeyManager) -> Option<Res
     // and we still dispatch through the OpenAI client.
     for kind in [
         DirectProviderKind::Anthropic,
+        DirectProviderKind::OpenAiCompatible,
         DirectProviderKind::OpenAi,
         DirectProviderKind::Gemini,
     ] {

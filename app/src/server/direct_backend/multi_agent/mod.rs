@@ -580,6 +580,7 @@ fn resolve_from_snapshot() -> Option<ResolvedProvider> {
     // — there's no UI toggle anymore; the presence of a key implies "use it".
     for kind in [
         DirectProviderKind::Anthropic,
+        DirectProviderKind::OpenAiCompatible,
         DirectProviderKind::OpenAi,
         DirectProviderKind::Gemini,
     ] {
@@ -587,7 +588,7 @@ fn resolve_from_snapshot() -> Option<ResolvedProvider> {
             DirectProviderKind::Anthropic => &snap.anthropic,
             DirectProviderKind::OpenAi => &snap.openai,
             DirectProviderKind::Gemini => &snap.gemini,
-            DirectProviderKind::OpenAiCompatible => continue,
+            DirectProviderKind::OpenAiCompatible => &snap.openai_compatible,
         };
         let api_key = overrides.api_key.trim();
         if api_key.is_empty() {

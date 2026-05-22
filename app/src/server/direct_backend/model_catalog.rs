@@ -52,6 +52,7 @@ pub async fn fetch_dynamic_catalog() -> Option<anyhow::Result<ModelsByFeature>> 
     let snap = current_snapshot();
     for kind in [
         DirectProviderKind::Anthropic,
+        DirectProviderKind::OpenAiCompatible,
         DirectProviderKind::OpenAi,
         DirectProviderKind::Gemini,
     ] {
@@ -59,7 +60,7 @@ pub async fn fetch_dynamic_catalog() -> Option<anyhow::Result<ModelsByFeature>> 
             DirectProviderKind::Anthropic => &snap.anthropic,
             DirectProviderKind::OpenAi => &snap.openai,
             DirectProviderKind::Gemini => &snap.gemini,
-            DirectProviderKind::OpenAiCompatible => continue,
+            DirectProviderKind::OpenAiCompatible => &snap.openai_compatible,
         };
         let api_key = overrides.api_key.trim();
         if api_key.is_empty() {

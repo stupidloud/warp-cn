@@ -7218,6 +7218,12 @@ struct ApiKeysWidget {
     anthropic_base_url_editor: ViewHandle<EditorView>,
     #[cfg(feature = "direct_llm_backend")]
     google_base_url_editor: ViewHandle<EditorView>,
+    #[cfg(feature = "direct_llm_backend")]
+    openai_model_id_editor: ViewHandle<EditorView>,
+    #[cfg(feature = "direct_llm_backend")]
+    anthropic_model_id_editor: ViewHandle<EditorView>,
+    #[cfg(feature = "direct_llm_backend")]
+    google_model_id_editor: ViewHandle<EditorView>,
 
     can_use_warp_credits_for_fallback: SwitchStateHandle,
     upgrade_highlight_index: HighlightedHyperlink,
@@ -7420,6 +7426,39 @@ impl ApiKeysWidget {
             "https://generativelanguage.googleapis.com",
             ctx,
         );
+        #[cfg(feature = "direct_llm_backend")]
+        let openai_model_id_editor = make_direct_editor(
+            ::ai::direct_backend::DirectBackendConfig::as_ref(ctx)
+                .overrides_for(::ai::direct_backend::DirectProviderKind::OpenAi)
+                .model_id
+                .clone(),
+            "gpt-4o-mini",
+            ::ai::direct_backend::DirectProviderKind::OpenAi,
+            DirectField::Model,
+            ctx,
+        );
+        #[cfg(feature = "direct_llm_backend")]
+        let anthropic_model_id_editor = make_direct_editor(
+            ::ai::direct_backend::DirectBackendConfig::as_ref(ctx)
+                .overrides_for(::ai::direct_backend::DirectProviderKind::Anthropic)
+                .model_id
+                .clone(),
+            "claude-sonnet-4-6",
+            ::ai::direct_backend::DirectProviderKind::Anthropic,
+            DirectField::Model,
+            ctx,
+        );
+        #[cfg(feature = "direct_llm_backend")]
+        let google_model_id_editor = make_direct_editor(
+            ::ai::direct_backend::DirectBackendConfig::as_ref(ctx)
+                .overrides_for(::ai::direct_backend::DirectProviderKind::Gemini)
+                .model_id
+                .clone(),
+            "gemini-2.5-flash",
+            ::ai::direct_backend::DirectProviderKind::Gemini,
+            DirectField::Model,
+            ctx,
+        );
 
         Self {
             openai_api_key_editor,
@@ -7432,6 +7471,12 @@ impl ApiKeysWidget {
             anthropic_base_url_editor,
             #[cfg(feature = "direct_llm_backend")]
             google_base_url_editor,
+            #[cfg(feature = "direct_llm_backend")]
+            openai_model_id_editor,
+            #[cfg(feature = "direct_llm_backend")]
+            anthropic_model_id_editor,
+            #[cfg(feature = "direct_llm_backend")]
+            google_model_id_editor,
 
             can_use_warp_credits_for_fallback: Default::default(),
             upgrade_highlight_index: Default::default(),
@@ -7502,6 +7547,14 @@ impl ApiKeysWidget {
             is_enabled,
             app,
         ));
+        #[cfg(feature = "direct_llm_backend")]
+        column.add_child(self.render_api_key_input(
+            appearance,
+            "OpenAI Model ID (optional)",
+            self.openai_model_id_editor.clone(),
+            is_enabled,
+            app,
+        ));
         column.add_child(self.render_api_key_input(
             appearance,
             warp_i18n::t_static!("settings-ai-anthropic-key"),
@@ -7517,6 +7570,14 @@ impl ApiKeysWidget {
             is_enabled,
             app,
         ));
+        #[cfg(feature = "direct_llm_backend")]
+        column.add_child(self.render_api_key_input(
+            appearance,
+            "Anthropic Model ID (optional)",
+            self.anthropic_model_id_editor.clone(),
+            is_enabled,
+            app,
+        ));
         column.add_child(self.render_api_key_input(
             appearance,
             warp_i18n::t_static!("settings-ai-google-key"),
@@ -7529,6 +7590,14 @@ impl ApiKeysWidget {
             appearance,
             "Gemini Base URL (optional)",
             self.google_base_url_editor.clone(),
+            is_enabled,
+            app,
+        ));
+        #[cfg(feature = "direct_llm_backend")]
+        column.add_child(self.render_api_key_input(
+            appearance,
+            "Gemini Model ID (optional)",
+            self.google_model_id_editor.clone(),
             is_enabled,
             app,
         ));

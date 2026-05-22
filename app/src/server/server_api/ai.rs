@@ -1409,6 +1409,13 @@ impl AIClient for ServerApi {
         // TODO: use relevant context from RequestContext and deprecate usage of ai_execution_context
         _ai_execution_context: Option<WarpAiExecutionContext>,
     ) -> Result<Vec<AIGeneratedCommand>, GenerateCommandsFromNaturalLanguageError> {
+        #[cfg(feature = "direct_llm_backend")]
+        if let Some(backend) = crate::server::direct_backend::active_backend_from_snapshot() {
+            return backend
+                .generate_commands_from_natural_language(prompt)
+                .await;
+        }
+
         let default_err = GenerateCommandsFromNaturalLanguageError::Other;
 
         let variables = GenerateCommandsVariables {
@@ -1448,6 +1455,11 @@ impl AIClient for ServerApi {
         // TODO: use relevant context from RequestContext and deprecate usage of ai_execution_context
         _ai_execution_context: Option<WarpAiExecutionContext>,
     ) -> anyhow::Result<GenerateDialogueResult> {
+        #[cfg(feature = "direct_llm_backend")]
+        if let Some(backend) = crate::server::direct_backend::active_backend_from_snapshot() {
+            return backend.generate_dialogue_answer(transcript, prompt).await;
+        }
+
         let graphql_transcript: Vec<TranscriptPartGraphql> = transcript
             .into_iter()
             .map(|part| TranscriptPartGraphql {
@@ -1500,6 +1512,11 @@ impl AIClient for ServerApi {
         &self,
         command: String,
     ) -> Result<GeneratedCommandMetadata, GeneratedCommandMetadataError> {
+        #[cfg(feature = "direct_llm_backend")]
+        if let Some(backend) = crate::server::direct_backend::active_backend_from_snapshot() {
+            return backend.generate_metadata_for_command(command).await;
+        }
+
         let default_err = GeneratedCommandMetadataError::Other;
         let variables = GenerateMetadataForCommandVariables {
             input: GenerateMetadataForCommandInput { command },
